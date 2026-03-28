@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Crear cuenta — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .auth-wrap {
+    max-width: 420px;
+    margin: 2rem auto;
+  }
+  .auth-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .auth-header {
+    padding: 2rem 2rem 1.25rem;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .auth-logo { font-size: 2.2rem; display: block; margin-bottom: .5rem; }
+  .auth-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--gray-900); }
+  .auth-header p  { font-size: .875rem; color: var(--gray-400); margin-top: .25rem; }
+  .auth-body { padding: 1.75rem 2rem; }
+  .auth-footer {
+    padding: 1rem 2rem 1.5rem;
+    text-align: center;
+    font-size: .875rem;
+    color: var(--gray-600);
+    border-top: 1px solid var(--gray-100);
+  }
+  .auth-footer a { color: var(--red); text-decoration: none; font-weight: 600; }
+  .auth-footer a:hover { text-decoration: underline; }
+  .password-hint {
+    font-size: .78rem;
+    color: var(--gray-400);
+    margin-top: .3rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span class="auth-logo">🎵</span>
+      <h2>Crear cuenta</h2>
+      <p>Regístrate para publicar eventos de cueca</p>
+    </div>
+    <div class="auth-body">
+      <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          <label for="{{ form.name.id }}">Nombre completo</label>
+          {{ form.name(id=form.name.id, placeholder="Tu nombre", autocomplete="name") }}
+          {% if form.name.errors %}<div class="field-error">{{ form.name.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.email.id }}">Correo electrónico</label>
+          {{ form.email(id=form.email.id, placeholder="tu@email.cl", autocomplete="email") }}
+          {% if form.email.errors %}<div class="field-error">{{ form.email.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id }}">Contraseña</label>
+          {{ form.password(id=form.password.id, placeholder="Mínimo 6 caracteres", autocomplete="new-password") }}
+          {% if form.password.errors %}
+            <div class="field-error">{{ form.password.errors[0] }}</div>
+          {% else %}
+            <div class="password-hint">Mínimo 6 caracteres</div>
+          {% endif %}
+        </div>
+        <div style="margin-top:1.25rem">
+          {{ form.submit(class_="btn btn-primary btn-full") }}
+        </div>
+      </form>
+    </div>
+    <div class="auth-footer">
+      ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Ingresar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

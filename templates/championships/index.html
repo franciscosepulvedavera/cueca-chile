@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Campeonatos Nacionales — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .section-header { margin-bottom: 1.5rem; }
+  .section-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); }
+  .section-header p  { font-size: .9rem; color: var(--gray-400); margin-top: .3rem; }
+
+  .champ-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .champ-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .champ-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .champ-img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    background: var(--gray-100);
+    display: block;
+  }
+  .champ-img-placeholder {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, var(--red-light), #fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+  }
+  .champ-body { padding: 1.1rem; flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+  .champ-name { font-size: 1rem; font-weight: 700; color: var(--gray-900); line-height: 1.3; }
+  .champ-loc  { font-size: .82rem; color: var(--gray-400); }
+  .champ-desc { font-size: .83rem; color: var(--gray-600); line-height: 1.5;
+                overflow: hidden; display: -webkit-box;
+                -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .champ-footer {
+    padding: .75rem 1.1rem;
+    border-top: 1px solid var(--gray-100);
+    font-size: .8rem;
+    color: var(--red);
+    font-weight: 600;
+  }
+  .empty-state { text-align: center; padding: 4rem 1rem; color: var(--gray-400); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <h1>🏆 Campeonatos Nacionales</h1>
+  <p>Listado de campeonatos nacionales de cueca — accede al cuadro de honor de cada uno.</p>
+</div>
+
+<div class="champ-grid">
+  {% for c in championships %}
+  <a href="{{ url_for('championships.show', champ_id=c.id) }}" class="champ-card">
+    {% if c.image_path %}
+      <img src="{{ url_for('static', filename=c.image_path) }}" alt="{{ c.name }}" class="champ-img" loading="lazy">
+    {% else %}
+      <div class="champ-img-placeholder">🥇</div>
+    {% endif %}
+    <div class="champ-body">
+      <div class="champ-name">{{ c.name }}</div>
+      {% if c.location %}<div class="champ-loc">📍 {{ c.location }}</div>{% endif %}
+      {% if c.description %}<div class="champ-desc">{{ c.description }}</div>{% endif %}
+    </div>
+    <div class="champ-footer">Ver cuadro de honor →</div>
+  </a>
+  {% else %}
+  <div class="empty-state" style="grid-column:1/-1">
+    <p style="font-size:2.5rem">🏆</p>
+    <p>Aún no hay campeonatos registrados.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

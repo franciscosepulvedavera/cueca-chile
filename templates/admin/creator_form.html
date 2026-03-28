@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}{{ title or 'Creador' }} — Admin{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Sección de redes sociales ─────────────────────────── */
+  .form-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gray-100);
+  }
+  .form-section-title {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Filas dinámicas de links ──────────────────────────── */
+  .dyn-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 130px auto;
+    gap: .5rem;
+    align-items: center;
+    margin-bottom: .5rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: .6rem .75rem;
+  }
+  .dyn-row select, .dyn-row input {
+    padding: .45rem .7rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: var(--white);
+    outline: none;
+  }
+  .dyn-row select:focus, .dyn-row input:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+  }
+  .add-row-btn {
+    font-size: .82rem;
+    margin-top: .4rem;
+    width: 100%;
+    justify-content: center;
+    border-style: dashed;
+  }
+  .dyn-empty {
+    font-size: .8rem;
+    color: var(--gray-400);
+    padding: .5rem 0;
+    text-align: center;
+  }
+  .field-hint {
+    font-size: .78rem;
+    color: var(--gray-400);
+    margin-top: .25rem;
+  }
+
+  @media (max-width: 600px) {
+    .dyn-row { grid-template-columns: 1fr 1fr; }
+    .dyn-row .remove-btn { grid-column: 1/-1; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:620px;margin:0 auto">
+
+  <!-- Cabecera -->
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a href="{{ url_for('admin.creators') }}" class="btn btn-secondary btn-sm">← Volver</a>
+    <h1 style="font-size:1.15rem;font-weight:700">{{ title or '+ Creador de Contenido' }}</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <!-- ── NOMBRE ─────────────────────────────────────── -->
+        <div class="field">
+          <label class="required" for="{{ form.name.id }}">Nombre</label>
+          {{ form.name(id=form.name.id, placeholder="Ej: Canal Cueca Chile") }}
+          {% if form.name.errors %}<div class="field-error">{{ form.name.errors[0] }}</div>{% endif %}
+        </div>
+
+        <!-- ── DESCRIPCIÓN ───────────────────────────────── -->
+        <div class="field">
+          <label for="{{ form.description.id }}">Descripción</label>
+          {{ form.description(id=form.description.id, placeholder="Breve descripción del creador o canal") }}
+          {% if form.description.errors %}<div class="field-error">{{ form.description.errors[0] }}</div>{% endif %}
+        </div>
+
+        <!-- ── URL PRINCIPAL (opcional) ──────────────────── -->
+        <div class="field">
+          <label for="{{ form.url.id }}">
+            URL principal
+            <span style="font-weight:400;color:var(--gray-400)">(opcional)</span>
+          </label>
+          {{ form.url(id=form.url.id, placeholder="https://youtube.com/@canal") }}
+          {% if form.url.errors %}<div class="field-error">{{ form.url.errors[0] }}</div>{% endif %}
+          <div class="field-hint">Canal principal, sitio web, etc. Si no tienes, deja vacío.</div>
+        </div>
+
+        <!-- ── IMAGEN ─────────────────────────────────────── -->
+        <div class="field">
+          <label for="{{ form.image.id }}">
+            Imagen / Avatar
+            <span style="font-weight:400;color:var(--gray-400)">(opcional, JPG/PNG/WEBP)</span>
+          </label>
+          {% if creator and creator.image_path %}
+          <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem">
+            <img src="{{ url_for('static', filename=creator.image_path) }}"
+                 style="height:64px;width:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gray-200)">
+            <span class="field-hint">Sube una nueva imagen para reemplazarla.</span>
+          </div>
+          {% endif %}
+          {{ form.image(id=form.image.id, accept=".jpg,.jpeg,.png,.webp") }}
+          {% if form.image.errors %}<div class="field-error">{{ form.image.errors[0] }}</div>{% endif %}
+        </div>
+
+        <!-- ── VISIBLE ────────────────────────────────────── -->
+        <div class="field" style="display:flex;align-items:center;gap:.6rem">
+          {{ form.active(id=form.active.id) }}
+          <label for="{{ form.active.id }}" style="margin:0;font-weight:500">Visible en el sitio</label>
+        </div>
+
+        <!-- ── REDES SOCIALES ─────────────────────────────── -->
+        <div class="form-section">
+          <div class="form-section-title">📱 Redes Sociales</div>
+          <div class="field-hint" style="margin-bottom:.75rem">
+            Agrega los perfiles del creador. Ninguno es obligatorio.
+          </div>
+
+          <div id="links-container">
+            {% if creator and creator.links %}
+              {% for link in creator.links %}
+              <div class="dyn-row">
+                <select name="link_platform[]">
+                  {% for val, label in platforms %}
+                  <option value="{{ val }}" {% if link.platform == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="link_url[]"
+                       value="{{ link.url }}"
+                       placeholder="https://...">
+                <input type="text" name="link_label[]"
+                       value="{{ link.label or '' }}"
+                       placeholder="Etiqueta (opcional)">
+                <button type="button" class="btn btn-danger btn-sm remove-btn"
+                        onclick="removeRow(this)" title="Eliminar">✕</button>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="dyn-empty" id="links-empty">Sin redes sociales agregadas.</div>
+            {% endif %}
+          </div>
+
+          <button type="button" class="btn btn-secondary add-row-btn" onclick="addLink()">
+            + Agregar red social
+          </button>
+        </div>
+
+        <!-- ── ACCIONES ───────────────────────────────────── -->
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem">
+          <a href="{{ url_for('admin.creators') }}" class="btn btn-secondary">Cancelar</a>
+          {{ form.submit(class_="btn btn-primary") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Opciones de plataformas para el select dinámico */
+  const PLATFORMS = [
+    {% for val, label in platforms %}
+    { value: "{{ val }}", label: "{{ label }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  /** Construye opciones HTML para un <select> */
+  function buildOptions(list, selected) {
+    return list.map(o =>
+      `<option value="${o.value}" ${o.value === selected ? 'selected' : ''}>${o.label}</option>`
+    ).join('');
+  }
+
+  /** Elimina una fila y muestra el mensaje vacío si no quedan filas */
+  function removeRow(btn) {
+    const row = btn.closest('.dyn-row');
+    const container = row.parentElement;
+    row.remove();
+    if (!container.querySelector('.dyn-row')) {
+      const msg = document.createElement('div');
+      msg.className = 'dyn-empty';
+      msg.id = 'links-empty';
+      msg.textContent = 'Sin redes sociales agregadas.';
+      container.appendChild(msg);
+    }
+  }
+
+  /** Agrega una nueva fila de red social */
+  function addLink() {
+    const container = document.getElementById('links-container');
+    const emptyMsg  = document.getElementById('links-empty');
+    if (emptyMsg) emptyMsg.remove();
+
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.innerHTML = `
+      <select name="link_platform[]">${buildOptions(PLATFORMS, 'instagram')}</select>
+      <input type="text" name="link_url[]" placeholder="https://instagram.com/...">
+      <input type="text" name="link_label[]" placeholder="Etiqueta (opcional)">
+      <button type="button" class="btn btn-danger btn-sm remove-btn"
+              onclick="removeRow(this)" title="Eliminar">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input[name="link_url[]"]').focus();
+  }
+</script>
+{% endblock %}

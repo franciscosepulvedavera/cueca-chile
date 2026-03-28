@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Campeonatos — Admin{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem">
+  <h1 style="font-size:1.35rem;font-weight:700">🏆 Campeonatos Nacionales</h1>
+  <a href="{{ url_for('admin.championship_new') }}" class="btn btn-primary">+ Nuevo campeonato</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Lugar</th>
+          <th>Estado</th>
+          <th>Entradas honor</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in championships %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td style="font-size:.85rem;color:var(--gray-400)">{{ c.location or '—' }}</td>
+          <td>
+            {% if c.active %}
+              <span class="badge badge-green">Activo</span>
+            {% else %}
+              <span class="badge badge-default">Oculto</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center">
+            <span class="badge badge-blue">{{ c.honor_entries.count() }}</span>
+          </td>
+          <td>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+              <a href="{{ url_for('championships.show', champ_id=c.id) }}" class="btn btn-secondary btn-sm">Ver</a>
+              <a href="{{ url_for('admin.championship_edit', champ_id=c.id) }}" class="btn btn-secondary btn-sm">✏️ Editar</a>
+              <a href="{{ url_for('admin.honor_new', champ_id=c.id) }}" class="btn btn-primary btn-sm">+ Honor</a>
+              <form method="post" action="{{ url_for('admin.championship_delete', champ_id=c.id) }}"
+                    onsubmit="return confirm('¿Eliminar «{{ c.name }}»? Se borrarán todas sus entradas.')">
+                {{ form.csrf_token }}
+                <button class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:2rem">Sin campeonatos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Moderación — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .mod-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+  }
+  .mod-header h1 { font-size: 1.35rem; font-weight: 700; }
+  .search-bar {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 1.25rem;
+  }
+  .search-bar input[type="search"] {
+    padding: .55rem .85rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    width: 260px;
+    outline: none;
+    font-family: var(--font);
+  }
+  .search-bar input:focus { border-color: var(--red); }
+  .mod-tabs {
+    display: flex;
+    gap: .35rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .mod-tab {
+    padding: .45rem 1rem;
+    border-radius: 999px;
+    font-size: .83rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--gray-600);
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    transition: all .15s;
+  }
+  .mod-tab:hover  { border-color: var(--red); color: var(--red); }
+  .mod-tab.active { background: var(--red); color: #fff; border-color: var(--red); }
+  .mod-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1rem;
+  }
+  .mod-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+  }
+  .mod-card-img {
+    width: 100%;
+    aspect-ratio: 9/16;
+    object-fit: cover;
+    max-height: 220px;
+  }
+  .mod-card-body { padding: .9rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+  .mod-card-meta { display: flex; justify-content: space-between; align-items: center; }
+  .mod-card-title { font-weight: 700; font-size: .95rem; color: var(--gray-900); }
+  .mod-card-sub   { font-size: .8rem; color: var(--gray-600); }
+  .mod-card-author { font-size: .78rem; color: var(--gray-400); }
+  .mod-card-actions {
+    padding: .75rem .9rem;
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--gray-400);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-header">
+  <h1>Moderación de eventos</h1>
+</div>
+
+<!-- Búsqueda -->
+<form method="get" class="search-bar">
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="Buscar por título, región, tipo…">
+  <input type="hidden" name="status" value="{{ status }}">
+  <button type="submit" class="btn btn-secondary">Buscar</button>
+  {% if q %}<a href="{{ url_for('events.moderation_dashboard', status=status) }}" class="btn btn-secondary">✕ Limpiar</a>{% endif %}
+</form>
+
+<!-- Tabs de estado -->
+<div class="mod-tabs">
+  <a href="{{ url_for('events.moderation_dashboard', status='pending', q=q) }}"
+     class="mod-tab {% if status == 'pending' %}active{% endif %}">Pendientes</a>
+  <a href="{{ url_for('events.moderation_dashboard', status='approved', q=q) }}"
+     class="mod-tab {% if status == 'approved' %}active{% endif %}">Aprobados</a>
+  <a href="{{ url_for('events.moderation_dashboard', status='rejected', q=q) }}"
+     class="mod-tab {% if status == 'rejected' %}active{% endif %}">Rechazados</a>
+  <a href="{{ url_for('events.moderation_dashboard', status='expired', q=q) }}"
+     class="mod-tab {% if status == 'expired' %}active{% endif %}">Expirados</a>
+</div>
+
+<!-- Grid de eventos -->
+<div class="mod-grid">
+  {% for e in events %}
+  <div class="mod-card">
+    <img src="{{ url_for('static', filename=e.image_path) }}" alt="{{ e.title }}" class="mod-card-img" loading="lazy">
+    <div class="mod-card-body">
+      <div class="mod-card-meta">
+        <span class="badge badge-default">{{ e.kind }}</span>
+        <span style="font-size:.75rem;color:var(--gray-400)">{{ e.date.strftime('%d %b %Y') }}</span>
+      </div>
+      <div class="mod-card-title">{{ e.title }}</div>
+      <div class="mod-card-sub">📍 {{ e.place }}, {{ e.comuna }} — {{ e.region }}</div>
+      <div class="mod-card-author">👤 {{ e.author.name }} · {{ e.author.email }}</div>
+      <div>
+        {% if e.expired %}
+          <span class="badge badge-default">Expirado</span>
+        {% elif e.status == 'pending' %}
+          <span class="badge badge-yellow">Pendiente</span>
+        {% elif e.status == 'approved' %}
+          <span class="badge badge-green">Aprobado</span>
+        {% elif e.status == 'rejected' %}
+          <span class="badge" style="background:#fee2e2;color:#991b1b">Rechazado</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="mod-card-actions">
+      <a href="{{ url_for('events.show', event_id=e.id) }}" class="btn btn-secondary btn-sm">Ver</a>
+      {% if e.status != 'approved' %}
+      <form method="post" action="{{ url_for('events.moderate', event_id=e.id, action='approve') }}" style="display:inline">
+        <button class="btn btn-success btn-sm">✓ Aprobar</button>
+      </form>
+      {% endif %}
+      {% if e.status != 'rejected' and not e.expired %}
+      <form method="post" action="{{ url_for('events.moderate', event_id=e.id, action='reject') }}" style="display:inline">
+        <button class="btn btn-secondary btn-sm">✗ Rechazar</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('events.delete', event_id=e.id) }}" style="display:inline"
+            onsubmit="return confirm('¿Eliminar «{{ e.title }}» permanentemente?')">
+        <button class="btn btn-danger btn-sm">🗑</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p style="font-size:2rem">📋</p>
+    <p>No hay eventos con este estado.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% include '_pagination.html' %}
+{% endblock %}

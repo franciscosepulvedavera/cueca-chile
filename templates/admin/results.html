@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Resultados — Admin{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Barra de filtros ─────────────────────────────────── */
+  .filter-row {
+    display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-end;
+    margin-bottom: 1.25rem;
+  }
+  .filter-row .field { margin-bottom: 0; min-width: 160px; }
+  .filter-row label  { font-size: .8rem; }
+
+  /* ── Medallas ─────────────────────────────────────────── */
+  .pos-badge {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .2rem .55rem; border-radius: 999px;
+    font-size: .78rem; font-weight: 700;
+  }
+  .pos-0 { background: #fef9c3; color: #854d0e; }  /* popular */
+  .pos-1 { background: #fef9c3; color: #854d0e; }  /* oro */
+  .pos-2 { background: #f3f4f6; color: #374151; }  /* plata */
+  .pos-3 { background: #ffedd5; color: #9a3412; }  /* bronce */
+  .pos-4 { background: #e0f2fe; color: #0369a1; }  /* 4° */
+
+  /* ── Acciones por fila ────────────────────────────────── */
+  .row-actions { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:700">📊 Gestión de Resultados</h1>
+    <p style="font-size:.82rem;color:var(--gray-400);margin-top:.15rem">
+      Edita o elimina entradas del cuadro de honor de cualquier campeonato.
+      Los cambios se reflejan automáticamente en la Tabla de Resultados pública.
+    </p>
+  </div>
+  <a href="{{ url_for('results.index') }}" target="_blank" class="btn btn-secondary btn-sm">
+    Ver tabla pública →
+  </a>
+</div>
+
+<!-- Filtros -->
+<form method="get" class="filter-row">
+  <div class="field">
+    <label>Campeonato</label>
+    <select name="champ_id" onchange="this.form.submit()">
+      <option value="">Todos los campeonatos</option>
+      {% for c in championships %}
+        <option value="{{ c.id }}" {% if champ_id_filter == c.id %}selected{% endif %}>
+          {{ c.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Año</label>
+    <select name="year" onchange="this.form.submit()">
+      <option value="">Todos los años</option>
+      {% for y in years %}
+        <option value="{{ y }}" {% if year_filter == y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if champ_id_filter or year_filter %}
+  <a href="{{ url_for('admin.admin_results') }}" class="btn btn-secondary btn-sm"
+     style="align-self:flex-end">✕ Limpiar filtros</a>
+  {% endif %}
+</form>
+
+<!-- Tabla de resultados -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Campeonato</th>
+          <th>Año</th>
+          <th>Lugar</th>
+          <th>Categoría</th>
+          <th>Pareja / Nombres</th>
+          <th>Región</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td style="font-size:.83rem;color:var(--gray-600)">
+            {{ entry.championship.name }}
+          </td>
+          <td>
+            <strong>{{ entry.year }}</strong>
+          </td>
+          <td>
+            {% if entry.position == 0 %}
+              <span class="pos-badge pos-0">⭐ Popular</span>
+            {% elif entry.position == 1 %}
+              <span class="pos-badge pos-1">🥇 1°</span>
+            {% elif entry.position == 2 %}
+              <span class="pos-badge pos-2">🥈 2°</span>
+            {% elif entry.position == 3 %}
+              <span class="pos-badge pos-3">🥉 3°</span>
+            {% else %}
+              <span class="pos-badge pos-4">4°</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.875rem">{{ entry.category }}</td>
+          <td style="font-weight:500">{{ entry.dancer_names }}</td>
+          <td style="font-size:.83rem;color:var(--gray-600)">{{ entry.region }}</td>
+          <td>
+            <div class="row-actions">
+              <!-- Editar: va al formulario de honor_edit con ?from=results para volver aquí -->
+              <a href="{{ url_for('admin.honor_edit',
+                                  champ_id=entry.championship_id,
+                                  entry_id=entry.id,
+                                  from='results') }}"
+                 class="btn btn-secondary btn-sm">✏️</a>
+
+              <!-- Eliminar: con confirmación y ?from=results para volver aquí -->
+              <form method="post"
+                    action="{{ url_for('admin.honor_delete',
+                                       champ_id=entry.championship_id,
+                                       entry_id=entry.id,
+                                       from='results') }}"
+                    onsubmit="return confirm('¿Eliminar esta entrada?\n{% if entry.position == 0 %}⭐ Popular{% else %}{{ entry.position }}°{% endif %} · {{ entry.category }} · {{ entry.dancer_names }} ({{ entry.year }})')"
+                    style="margin:0">
+                {{ form.csrf_token }}
+                <button class="btn btn-danger btn-sm" title="Eliminar entrada">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:var(--gray-400);padding:2.5rem">
+            {% if champ_id_filter or year_filter %}
+              No hay resultados con los filtros seleccionados.
+            {% else %}
+              No hay entradas en el cuadro de honor todavía.
+              <a href="{{ url_for('admin.championships') }}" style="color:var(--red)">Ir a campeonatos →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Paginación -->
+{% if pagination.pages > 1 %}
+{% include '_pagination.html' %}
+{% endif %}
+
+<!-- Info adicional -->
+<div style="margin-top:1rem;padding:.75rem 1rem;background:var(--gray-50);border-radius:var(--radius-sm);
+            font-size:.8rem;color:var(--gray-600);border:1px solid var(--gray-200)">
+  💡 <strong>Nota:</strong> Los resultados de la tabla pública se calculan automáticamente
+  a partir de estas entradas. Editar o eliminar aquí afecta la Tabla de Resultados en tiempo real.
+  Para agregar nuevas entradas, usa la sección
+  <a href="{{ url_for('admin.championships') }}" style="color:var(--red)">Campeonatos</a>.
+</div>
+
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} — {{ champ.name }}{% endblock %}
+
+{% block head %}
+<style>
+  .form-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gray-100);
+  }
+  .form-section-title {
+    font-size: .82rem; font-weight: 700;
+    color: var(--gray-600); text-transform: uppercase;
+    letter-spacing: .05em; margin-bottom: .9rem;
+  }
+  /* Filas dinámicas de links */
+  .dyn-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 130px auto;
+    gap: .5rem; align-items: center;
+    margin-bottom: .4rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: .5rem .65rem;
+  }
+  .dyn-row select, .dyn-row input {
+    padding: .4rem .65rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem; font-family: var(--font);
+    color: var(--gray-900); background: var(--white); outline: none;
+  }
+  .dyn-row select:focus, .dyn-row input:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+  }
+  .add-row-btn {
+    font-size: .82rem; margin-top: .4rem;
+    width: 100%; justify-content: center; border-style: dashed;
+  }
+  .dyn-empty { font-size: .8rem; color: var(--gray-400); padding: .4rem 0; text-align: center; }
+  @media (max-width:600px) {
+    .dyn-row { grid-template-columns: 1fr 1fr; }
+    .dyn-row .remove-btn { grid-column: 1/-1; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;margin:0 auto">
+
+  <!-- Cabecera -->
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    {% if request.args.get('from') == 'results' %}
+      <a href="{{ url_for('admin.admin_results') }}" class="btn btn-secondary btn-sm">← Resultados</a>
+    {% else %}
+      <a href="{{ url_for('admin.championship_edit', champ_id=champ.id) }}" class="btn btn-secondary btn-sm">← Volver</a>
+    {% endif %}
+    <div>
+      <h1 style="font-size:1.1rem;font-weight:700">{{ title }}</h1>
+      <p style="font-size:.8rem;color:var(--gray-400);margin-top:.1rem">{{ champ.name }}</p>
+    </div>
+  </div>
+
+  <!-- Resumen de la entrada al editar -->
+  {% if is_edit and entry %}
+  <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);
+              padding:.65rem 1rem;margin-bottom:1rem;font-size:.83rem;color:var(--gray-600)">
+    <strong>Editando:</strong>
+    {% if entry.position == 0 %}⭐ Pareja más popular
+    {% else %}{{ entry.position }}° lugar{% endif %} ·
+    {{ entry.category }} · {{ entry.dancer_names }} · {{ entry.year }}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {{ form.hidden_tag() }}
+
+        <!-- Año y posición -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="field">
+            <label class="required" for="{{ form.year.id }}">Año</label>
+            {{ form.year(id=form.year.id, placeholder="2025") }}
+            {% if form.year.errors %}<div class="field-error">{{ form.year.errors[0] }}</div>{% endif %}
+          </div>
+          <div class="field">
+            <label class="required" for="{{ form.position.id }}">Distinción / Lugar</label>
+            {{ form.position(id=form.position.id) }}
+            {% if form.position.errors %}<div class="field-error">{{ form.position.errors[0] }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Categoría -->
+        <div class="field">
+          <label class="required" for="{{ form.category.id }}">Categoría</label>
+          {{ form.category(id=form.category.id, placeholder="Ej: Adulto, Juvenil, Infantil, Senior") }}
+          {% if form.category.errors %}<div class="field-error">{{ form.category.errors[0] }}</div>{% endif %}
+        </div>
+
+        <!-- Pareja -->
+        <div class="field">
+          <label class="required" for="{{ form.dancer_names.id }}">Pareja / Nombre(s)</label>
+          {{ form.dancer_names(id=form.dancer_names.id, placeholder="Ej: Juan Pérez / María López") }}
+          {% if form.dancer_names.errors %}<div class="field-error">{{ form.dancer_names.errors[0] }}</div>{% endif %}
+        </div>
+
+        <!-- Región y comuna en columnas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="field">
+            <label class="required" for="{{ form.region.id }}">Región</label>
+            {{ form.region(id=form.region.id) }}
+            {% if form.region.errors %}<div class="field-error">{{ form.region.errors[0] }}</div>{% endif %}
+          </div>
+          <div class="field">
+            <label for="{{ form.comuna.id }}">
+              Comuna / Ciudad
+              <span style="font-weight:400;color:var(--gray-400)">(opcional)</span>
+            </label>
+            {{ form.comuna(id=form.comuna.id, placeholder="Ej: Valparaíso") }}
+            <div class="help">{{ form.comuna.description }}</div>
+          </div>
+        </div>
+
+        <!-- ── REDES SOCIALES DE LA PAREJA ───────────────── -->
+        <div class="form-section">
+          <div class="form-section-title">📱 Redes sociales de la pareja</div>
+          <div style="font-size:.78rem;color:var(--gray-400);margin-bottom:.65rem">
+            Agrega los perfiles de los integrantes para que el público pueda conocerlos. Todos son opcionales.
+          </div>
+
+          <div id="links-container">
+            {% if is_edit and entry and entry.links %}
+              {% for link in entry.links %}
+              <div class="dyn-row">
+                <select name="link_platform[]">
+                  {% for val, label in platforms %}
+                  <option value="{{ val }}" {% if link.platform == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="link_url[]" value="{{ link.url }}" placeholder="https://...">
+                <input type="text" name="link_label[]" value="{{ link.label or '' }}" placeholder="Etiqueta">
+                <button type="button" class="btn btn-danger btn-sm remove-btn"
+                        onclick="removeRow(this)">✕</button>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="dyn-empty" id="links-empty">Sin redes agregadas.</div>
+            {% endif %}
+          </div>
+
+          <button type="button" class="btn btn-secondary add-row-btn" onclick="addLink()">
+            + Agregar red social
+          </button>
+        </div>
+
+        <!-- Acciones -->
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem">
+          {% if request.args.get('from') == 'results' %}
+            <a href="{{ url_for('admin.admin_results') }}" class="btn btn-secondary">Cancelar</a>
+          {% else %}
+            <a href="{{ url_for('admin.championship_edit', champ_id=champ.id) }}" class="btn btn-secondary">Cancelar</a>
+          {% endif %}
+          {{ form.submit(class_="btn btn-primary",
+                         value=("Actualizar entrada" if is_edit else "Agregar entrada")) }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PLATFORMS = [
+    {% for val, label in platforms %}
+    { value: "{{ val }}", label: "{{ label }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function buildOptions(list, selected) {
+    return list.map(o =>
+      `<option value="${o.value}" ${o.value === selected ? 'selected' : ''}>${o.label}</option>`
+    ).join('');
+  }
+
+  function removeRow(btn) {
+    const row = btn.closest('.dyn-row');
+    const container = row.parentElement;
+    row.remove();
+    if (!container.querySelector('.dyn-row')) {
+      const msg = document.createElement('div');
+      msg.className = 'dyn-empty'; msg.id = 'links-empty';
+      msg.textContent = 'Sin redes agregadas.';
+      container.appendChild(msg);
+    }
+  }
+
+  function addLink() {
+    const container = document.getElementById('links-container');
+    const empty = document.getElementById('links-empty');
+    if (empty) empty.remove();
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.innerHTML = `
+      <select name="link_platform[]">${buildOptions(PLATFORMS, 'instagram')}</select>
+      <input type="text" name="link_url[]" placeholder="https://instagram.com/...">
+      <input type="text" name="link_label[]" placeholder="Etiqueta (opcional)">
+      <button type="button" class="btn btn-danger btn-sm remove-btn"
+              onclick="removeRow(this)">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input[name="link_url[]"]').focus();
+  }
+</script>
+{% endblock %}

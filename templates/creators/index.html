@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Creadores de Contenido — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .section-header { margin-bottom: 1.5rem; }
+  .section-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); }
+  .section-header p  { font-size: .9rem; color: var(--gray-400); margin-top: .3rem; }
+
+  .dir-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.1rem;
+  }
+  .dir-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .dir-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+  .dir-avatar {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 1.25rem auto .75rem;
+    border: 3px solid var(--red-light);
+    display: block;
+  }
+  .dir-avatar-placeholder {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: var(--red-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 1.25rem auto .75rem;
+  }
+  .dir-body {
+    padding: 0 1rem .75rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  .dir-name { font-weight: 700; font-size: .95rem; color: var(--gray-900); }
+  .dir-desc {
+    font-size: .8rem; color: var(--gray-600); line-height: 1.5;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  }
+
+  /* Botonera de redes sociales */
+  .dir-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .35rem;
+    margin-top: auto;
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--gray-100);
+  }
+  .dir-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 600;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  .dir-link-btn:hover {
+    background: var(--red-light);
+    color: var(--red);
+  }
+
+  /* Botón principal (URL directa) */
+  .dir-main-link {
+    margin-top: auto;
+    padding: .65rem 1rem;
+    border-top: 1px solid var(--gray-100);
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--red);
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+  .dir-main-link:hover { background: var(--red-light); }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--gray-400);
+    grid-column: 1/-1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <h1>🎬 Creadores de Contenido</h1>
+  <p>Canales, cuentas y creadores que difunden la cueca chilena.</p>
+</div>
+
+<div class="dir-grid">
+  {% for c in creators %}
+  <div class="dir-card">
+    <!-- Avatar -->
+    {% if c.image_path %}
+      <img src="{{ url_for('static', filename=c.image_path) }}" alt="{{ c.name }}" class="dir-avatar">
+    {% else %}
+      <div class="dir-avatar-placeholder">🎬</div>
+    {% endif %}
+
+    <!-- Nombre y descripción -->
+    <div class="dir-body">
+      <div class="dir-name">{{ c.name }}</div>
+      {% if c.description %}<div class="dir-desc">{{ c.description }}</div>{% endif %}
+    </div>
+
+    <!-- Acceso: URL principal o botonera de redes -->
+    {% if c.url %}
+      <a href="{{ c.url }}" target="_blank" rel="noopener" class="dir-main-link">Visitar →</a>
+    {% elif c.links %}
+      <div class="dir-links">
+        {% for link in c.links %}
+        <a href="{{ link.url }}" target="_blank" rel="noopener" class="dir-link-btn"
+           title="{{ link.label or link.platform|capitalize }}">
+          {% if link.platform == 'instagram' %}📸
+          {% elif link.platform == 'tiktok' %}🎵
+          {% elif link.platform == 'facebook' %}👥
+          {% elif link.platform == 'youtube' %}▶️
+          {% elif link.platform == 'twitch' %}🎮
+          {% else %}🌐{% endif %}
+          {{ link.label or link.platform|capitalize }}
+        </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p style="font-size:2.5rem">🎬</p>
+    <p>Aún no hay creadores registrados.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

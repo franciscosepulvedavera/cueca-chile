@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Tabla de Resultados — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .section-header { margin-bottom: 1.5rem; }
+  .section-header h1 { font-size: 1.5rem; font-weight: 800; }
+  .section-header p  { font-size: .9rem; color: var(--gray-400); margin-top: .3rem; }
+
+  .results-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .results-table { width: 100%; border-collapse: collapse; }
+  .results-table th {
+    padding: .75rem 1.1rem;
+    text-align: left;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--gray-600);
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+  }
+  .results-table th.center { text-align: center; }
+  .results-table td {
+    padding: .7rem 1.1rem;
+    font-size: .875rem;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: var(--gray-50); }
+  .results-table td.center { text-align: center; }
+
+  .region-name { font-weight: 600; color: var(--gray-900); }
+
+  .medal {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .65rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+    min-width: 52px;
+    justify-content: center;
+  }
+  .medal-1 { background: #fef9c3; color: #854d0e; }
+  .medal-2 { background: #f3f4f6; color: #374151; }
+  .medal-3 { background: #ffedd5; color: #9a3412; }
+  .medal-4 { background: #e0f2fe; color: #0369a1; }
+  .medal-none { color: var(--gray-200); font-size: 1rem; }
+
+  .total-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 .5rem;
+    background: var(--red-light);
+    color: var(--red-dark);
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .total-zero { background: transparent; color: var(--gray-200); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <h1>📊 Tabla de Resultados</h1>
+  <p>Conteo acumulado de 1°, 2°, 3° y 4° lugares por región, calculado desde los cuadros de honor de todos los campeonatos nacionales.</p>
+</div>
+
+<div class="results-card">
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>Región</th>
+        <th class="center">🥇 1° Lugar</th>
+        <th class="center">🥈 2° Lugar</th>
+        <th class="center">🥉 3° Lugar</th>
+        <th class="center">4° Lugar</th>
+        <th class="center">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in table %}
+        {% set c1 = row.counts.get(1, 0) %}
+        {% set c2 = row.counts.get(2, 0) %}
+        {% set c3 = row.counts.get(3, 0) %}
+        {% set c4 = row.counts.get(4, 0) %}
+        {% set total = c1 + c2 + c3 + c4 %}
+      <tr>
+        <td class="region-name">{{ row.region }}</td>
+        <td class="center">
+          {% if c1 > 0 %}
+            <span class="medal medal-1">🥇 {{ c1 }}</span>
+          {% else %}
+            <span class="medal-none">—</span>
+          {% endif %}
+        </td>
+        <td class="center">
+          {% if c2 > 0 %}
+            <span class="medal medal-2">🥈 {{ c2 }}</span>
+          {% else %}
+            <span class="medal-none">—</span>
+          {% endif %}
+        </td>
+        <td class="center">
+          {% if c3 > 0 %}
+            <span class="medal medal-3">🥉 {{ c3 }}</span>
+          {% else %}
+            <span class="medal-none">—</span>
+          {% endif %}
+        </td>
+        <td class="center">
+          {% if c4 > 0 %}
+            <span class="medal medal-4">4° {{ c4 }}</span>
+          {% else %}
+            <span class="medal-none">—</span>
+          {% endif %}
+        </td>
+        <td class="center">
+          <span class="total-badge {% if total == 0 %}total-zero{% endif %}">
+            {{ total if total > 0 else '—' }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

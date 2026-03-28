@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Usuarios — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+  }
+  .admin-header h1 { font-size: 1.35rem; font-weight: 700; }
+  .search-row {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    align-items: flex-end;
+  }
+  .search-row input[type="search"],
+  .search-row select {
+    padding: .55rem .85rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    font-family: var(--font);
+    outline: none;
+    background: var(--white);
+  }
+  .search-row input[type="search"] { width: 240px; }
+  .search-row input:focus, .search-row select:focus { border-color: var(--red); }
+
+  /* Role badges */
+  .role-admin    { background: #fee2e2; color: #991b1b; }
+  .role-moderator { background: #dbeafe; color: #1e40af; }
+  .role-user     { background: var(--gray-100); color: var(--gray-600); }
+  .status-banned { background: #f3f4f6; color: #6b7280; text-decoration: line-through; }
+
+  .actions-cell { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+
+  /* Inline role selector */
+  .role-form { display: flex; gap: .35rem; align-items: center; }
+  .role-form select {
+    padding: .3rem .6rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .8rem;
+    font-family: var(--font);
+    outline: none;
+    background: var(--white);
+  }
+  .role-form select:focus { border-color: var(--red); }
+
+  .stats-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: .9rem 1.25rem;
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+  }
+  .stat-card .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--red); }
+  .stat-card .stat-label { font-size: .78rem; color: var(--gray-400); margin-top: .15rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+  <h1>Gestión de usuarios</h1>
+</div>
+
+<!-- Stats rápidas -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ pagination.total }}</div>
+    <div class="stat-label">Total usuarios</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ pagination.items | selectattr('role', 'equalto', 'admin') | list | length }}</div>
+    <div class="stat-label">Admins (página)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ pagination.items | selectattr('role', 'equalto', 'moderator') | list | length }}</div>
+    <div class="stat-label">Moderadores (página)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ pagination.items | selectattr('banned', 'equalto', true) | list | length }}</div>
+    <div class="stat-label">Bloqueados (página)</div>
+  </div>
+</div>
+
+<!-- Búsqueda y filtros -->
+<form method="get" class="search-row">
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="Buscar por nombre o email">
+  <select name="role">
+    <option value="">Todos los roles</option>
+    <option value="user"      {% if role_filter == 'user' %}selected{% endif %}>Usuarios</option>
+    <option value="moderator" {% if role_filter == 'moderator' %}selected{% endif %}>Moderadores</option>
+    <option value="admin"     {% if role_filter == 'admin' %}selected{% endif %}>Administradores</option>
+  </select>
+  <button type="submit" class="btn btn-secondary">Buscar</button>
+  {% if q or role_filter %}
+  <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">✕ Limpiar</a>
+  {% endif %}
+</form>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Registrado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--gray-400);font-size:.8rem">{{ u.id }}</td>
+          <td>
+            <span {% if u.banned %}class="status-banned"{% endif %}>{{ u.name }}</span>
+          </td>
+          <td style="font-size:.85rem">{{ u.email }}</td>
+          <td>
+            <span class="badge role-{{ u.role }}">{{ u.role }}</span>
+          </td>
+          <td>
+            {% if u.banned %}
+            <span class="badge" style="background:#fee2e2;color:#991b1b">Bloqueado</span>
+            {% else %}
+            <span class="badge badge-green">Activo</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;color:var(--gray-400)">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+          <td>
+            {% if u.id == current_user.id %}
+              <span style="font-size:.8rem;color:var(--gray-400)">(tú)</span>
+            {% else %}
+            <div class="actions-cell">
+              <!-- Cambiar rol -->
+              <form method="post" action="{{ url_for('admin.change_role', user_id=u.id) }}" class="role-form">
+                {{ role_form.csrf_token }}
+                <select name="role">
+                  <option value="user"       {% if u.role == 'user' %}selected{% endif %}>user</option>
+                  <option value="moderator"  {% if u.role == 'moderator' %}selected{% endif %}>moderador</option>
+                  <option value="admin"      {% if u.role == 'admin' %}selected{% endif %}>admin</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Guardar</button>
+              </form>
+
+              <!-- Ban / Unban -->
+              {% if not u.banned %}
+              <form method="post" action="{{ url_for('admin.ban_user', user_id=u.id) }}"
+                    onsubmit="return confirm('¿Bloquear a {{ u.email }}?')">
+                {{ form.csrf_token }}
+                <button class="btn btn-danger btn-sm">Bloquear</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin.unban_user', user_id=u.id) }}">
+                {{ form.csrf_token }}
+                <button class="btn btn-success btn-sm">Desbloquear</button>
+              </form>
+              {% endif %}
+
+              <!-- Eliminar -->
+              <form method="post" action="{{ url_for('admin.delete_user', user_id=u.id) }}"
+                    onsubmit="return confirm('¿Eliminar permanentemente a {{ u.email }}? Esta acción no se puede deshacer.')">
+                {{ form.csrf_token }}
+                <button class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:2rem">No se encontraron usuarios.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include '_pagination.html' %}
+{% endblock %}

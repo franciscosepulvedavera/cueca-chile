@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cueca Chile{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ══════════════════════════════════════════
+       Variables & Reset
+    ══════════════════════════════════════════ */
+    :root {
+      --red:       #c0392b;
+      --red-dark:  #962d22;
+      --red-light: #fde8e6;
+      --gray-50:   #f9fafb;
+      --gray-100:  #f3f4f6;
+      --gray-200:  #e5e7eb;
+      --gray-400:  #9ca3af;
+      --gray-600:  #4b5563;
+      --gray-800:  #1f2937;
+      --gray-900:  #111827;
+      --white:     #ffffff;
+      --radius-sm: 8px;
+      --radius:    14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+      --shadow:    0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+      --nav-h:     64px;
+      --font:      'Inter', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: var(--gray-50); }
+    body {
+      font-family: var(--font);
+      color: var(--gray-800);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Imagen de fondo decorativa */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url("{{ url_for('static', filename='img/background.png') }}") no-repeat left top;
+      background-size: contain;
+      opacity: .55;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════════════════
+       Navbar
+    ══════════════════════════════════════════ */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .navbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .nav-brand {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+      letter-spacing: -.02em;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+      list-style: none;
+    }
+    .nav-links a, .nav-links button.nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .45rem .85rem;
+      border-radius: var(--radius-sm);
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--gray-700, #374151);
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .nav-links a:hover, .nav-links button.nav-btn:hover { background: var(--gray-100); color: var(--gray-900); }
+    .nav-links .nav-cta {
+      background: var(--red);
+      color: var(--white) !important;
+      border-radius: var(--radius-sm);
+    }
+    .nav-links .nav-cta:hover { background: var(--red-dark); }
+    .nav-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--red);
+      color: #fff;
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .nav-user {
+      font-size: .875rem;
+      color: var(--gray-600);
+      padding: .45rem .85rem;
+    }
+
+    /* ══════════════════════════════════════════
+       Contenido principal
+    ══════════════════════════════════════════ */
+    main {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 3rem;
+    }
+    @media (min-width: 900px) {
+      main { padding-left: min(28vw, 320px); }
+    }
+
+    /* ══════════════════════════════════════════
+       Flash messages
+    ══════════════════════════════════════════ */
+    .flash-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.25rem; }
+    .flash {
+      padding: .75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: .875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .flash.success  { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
+    .flash.error    { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+    .flash.warning  { background: #fef9c3; color: #854d0e; border-left: 4px solid #eab308; }
+    .flash.info     { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+
+    /* ══════════════════════════════════════════
+       Cards
+    ══════════════════════════════════════════ */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .card-body { padding: 1.25rem; }
+
+    /* ══════════════════════════════════════════
+       Badges
+    ══════════════════════════════════════════ */
+    .badge {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .badge-default   { background: var(--gray-100); color: var(--gray-600); }
+    .badge-red       { background: var(--red-light); color: var(--red-dark); }
+    .badge-green     { background: #dcfce7; color: #166534; }
+    .badge-yellow    { background: #fef9c3; color: #854d0e; }
+    .badge-blue      { background: #dbeafe; color: #1e40af; }
+    .badge-purple    { background: #f3e8ff; color: #6b21a8; }
+    .badge-orange    { background: #ffedd5; color: #9a3412; }
+
+    /* ══════════════════════════════════════════
+       Buttons
+    ══════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .55rem 1.1rem;
+      border-radius: var(--radius-sm);
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-primary   { background: var(--red); color: #fff; }
+    .btn-primary:hover { background: var(--red-dark); }
+    .btn-secondary { background: var(--gray-100); color: var(--gray-800); border: 1px solid var(--gray-200); }
+    .btn-secondary:hover { background: var(--gray-200); }
+    .btn-danger    { background: #fee2e2; color: #991b1b; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-success   { background: #dcfce7; color: #166534; }
+    .btn-success:hover { background: #bbf7d0; }
+    .btn-sm { padding: .35rem .75rem; font-size: .8rem; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ══════════════════════════════════════════
+       Formularios
+    ══════════════════════════════════════════ */
+    .field { margin-bottom: 1.1rem; }
+    .field label {
+      display: block;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--gray-700, #374151);
+      margin-bottom: .4rem;
+    }
+    .field input[type="text"],
+    .field input[type="date"],
+    .field input[type="email"],
+    .field input[type="password"],
+    .field input[type="url"],
+    .field input[type="file"],
+    .field input[type="search"],
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: .6rem .85rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: .9rem;
+      color: var(--gray-900);
+      background: var(--white);
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(192,57,43,.12);
+    }
+    .field textarea { resize: vertical; min-height: 110px; }
+    .field .help { font-size: .8rem; color: var(--gray-400); margin-top: .3rem; }
+    .field .field-error { font-size: .8rem; color: #dc2626; margin-top: .3rem; }
+    .required::after { content: " *"; color: var(--red); }
+
+    /* ══════════════════════════════════════════
+       Tabla
+    ══════════════════════════════════════════ */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--gray-100); }
+    th { font-weight: 600; color: var(--gray-600); background: var(--gray-50); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+
+    /* ══════════════════════════════════════════
+       Pagination
+    ══════════════════════════════════════════ */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      margin-top: 2rem;
+    }
+    .pagination a, .pagination span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      font-size: .875rem;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--gray-700, #374151);
+      border: 1px solid var(--gray-200);
+      background: var(--white);
+      transition: all .15s;
+    }
+    .pagination a:hover { background: var(--gray-100); }
+    .pagination .active { background: var(--red); color: #fff; border-color: var(--red); }
+    .pagination .disabled { opacity: .4; cursor: default; pointer-events: none; }
+
+    /* ══════════════════════════════════════════
+       Tabs / Filter bar
+    ══════════════════════════════════════════ */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-bottom: 1.5rem;
+    }
+    .filter-tab {
+      padding: .45rem 1rem;
+      border-radius: 999px;
+      font-size: .85rem;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--gray-600);
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      transition: all .15s;
+    }
+    .filter-tab:hover { border-color: var(--red); color: var(--red); }
+    .filter-tab.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+    /* ══════════════════════════════════════════
+       Dropdown "Panel Admin" en el navbar
+    ══════════════════════════════════════════ */
+    .nav-admin-dropdown { position: relative; }
+    .nav-admin-toggle { font-size: .875rem; font-weight: 600; color: var(--red) !important; }
+    .nav-admin-toggle:hover { background: var(--red-light) !important; }
+    .nav-admin-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 180px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      list-style: none;
+      z-index: 200;
+      padding: .4rem 0;
+    }
+    .nav-admin-dropdown.open .nav-admin-menu { display: block; }
+    .nav-admin-menu li a {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1rem;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--gray-800);
+      text-decoration: none;
+      transition: background .1s;
+    }
+    .nav-admin-menu li a:hover { background: var(--gray-50); color: var(--red); }
+
+    /* ══════════════════════════════════════════
+       Nav sections (pestañas principales)
+    ══════════════════════════════════════════ */
+    .nav-sections { gap: 0; }
+    .nav-section-link {
+      padding: .45rem .9rem !important;
+      font-weight: 600 !important;
+      color: var(--gray-600) !important;
+      border-bottom: 2px solid transparent;
+      border-radius: 0 !important;
+    }
+    .nav-section-link:hover { background: none !important; color: var(--red) !important; border-bottom-color: var(--red-light); }
+    .nav-section-active { color: var(--red) !important; border-bottom-color: var(--red) !important; }
+
+    /* ══════════════════════════════════════════
+       Footer
+    ══════════════════════════════════════════ */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 1.5rem 1rem;
+      font-size: .82rem;
+      color: var(--gray-400);
+      border-top: 1px solid var(--gray-200);
+      background: var(--white);
+    }
+    footer a { color: var(--red); text-decoration: none; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ═══ NAVBAR ═══ -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{{ url_for('index') }}" class="nav-brand">🎵 Cueca Chile</a>
+
+      <!-- Menú principal de secciones -->
+      <ul class="nav-links nav-sections">
+        <li><a href="{{ url_for('index') }}" class="nav-section-link {% if request.endpoint == 'index' %}nav-section-active{% endif %}">Eventos</a></li>
+        <li><a href="{{ url_for('championships.index') }}" class="nav-section-link {% if request.blueprint == 'championships' %}nav-section-active{% endif %}">Campeonatos</a></li>
+        <li><a href="{{ url_for('creators.index') }}" class="nav-section-link {% if request.blueprint == 'creators' %}nav-section-active{% endif %}">Creadores</a></li>
+        <li><a href="{{ url_for('stores.index') }}" class="nav-section-link {% if request.blueprint == 'stores' %}nav-section-active{% endif %}">Tiendas</a></li>
+        <li><a href="{{ url_for('results.index') }}" class="nav-section-link {% if request.blueprint == 'results' %}nav-section-active{% endif %}">Resultados</a></li>
+      </ul>
+
+      <!-- Menú de usuario -->
+      <ul class="nav-links">
+        {% if current_user.is_authenticated %}
+          <li class="nav-user">Hola, <strong>{{ current_user.name }}</strong></li>
+          <li><a href="{{ url_for('events.new') }}" class="nav-cta">+ Publicar</a></li>
+          <li>
+            <a href="{{ url_for('notifications.index') }}">
+              🔔
+              {% if current_user.unread_notifications > 0 %}
+                <span class="nav-badge">{{ current_user.unread_notifications }}</span>
+              {% endif %}
+            </a>
+          </li>
+          {% if current_user.role in ('moderator','admin') %}
+          <li><a href="{{ url_for('events.moderation_dashboard') }}">Moderación</a></li>
+          {% endif %}
+          {% if current_user.role == 'admin' %}
+          <li class="nav-admin-dropdown">
+            <button class="nav-btn nav-admin-toggle" onclick="this.parentElement.classList.toggle('open')">
+              Panel Admin ▾
+            </button>
+            <ul class="nav-admin-menu">
+              <li><a href="{{ url_for('admin.users') }}">👤 Usuarios</a></li>
+              <li><a href="{{ url_for('admin.championships') }}">🏆 Campeonatos</a></li>
+              <li><a href="{{ url_for('admin.admin_results') }}">📊 Resultados</a></li>
+              <li><a href="{{ url_for('admin.creators') }}">🎥 Creadores</a></li>
+              <li><a href="{{ url_for('admin.stores') }}">🛍️ Tiendas</a></li>
+            </ul>
+          </li>
+          {% endif %}
+          <li><a href="{{ url_for('auth.logout') }}">Salir</a></li>
+        {% else %}
+          <li><a href="{{ url_for('auth.login') }}">Ingresar</a></li>
+          <li><a href="{{ url_for('auth.register') }}" class="nav-cta">Crear cuenta</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-list">
+      {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <p>Cueca Chile — plataforma colaborativa &nbsp;·&nbsp; No nos responsabilizamos por la veracidad de los eventos publicados.</p>
+  </footer>
+
+<script>
+  // Cerrar el dropdown de admin al hacer click fuera de él
+  document.addEventListener('click', function(e) {
+    var dropdown = document.querySelector('.nav-admin-dropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+</script>
+</body>
+</html>

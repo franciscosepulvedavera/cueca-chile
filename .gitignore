@@ -1,0 +1,43 @@
+# Entorno virtual
+venv/
+.venv/
+
+# Variables de entorno (nunca commitear)
+.env
+
+# Base de datos local
+instance/
+*.db
+*.sqlite3
+
+# Uploads generados por usuarios
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code (contexto local, no pertenece al repo)
+.claude/
+
+# Salesforce (no pertenece a este proyecto)
+.sfdx/
+
+# Logs
+*.log
+
+# Railway / deploy cache
+.nixpacks/

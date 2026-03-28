@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Tiendas — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .section-header { margin-bottom: 1.5rem; }
+  .section-header h1 { font-size: 1.5rem; font-weight: 800; }
+  .section-header p  { font-size: .9rem; color: var(--gray-400); margin-top: .3rem; }
+
+  /* ── Grid de tarjetas ─────────────────────────────────── */
+  .dir-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.1rem;
+  }
+
+  /* ── Tarjeta de tienda ────────────────────────────────── */
+  .dir-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .dir-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+  .dir-avatar {
+    width: 88px; height: 88px;
+    border-radius: 50%; object-fit: cover;
+    margin: 1.25rem auto .75rem;
+    border: 3px solid var(--red-light);
+    display: block;
+  }
+  .dir-avatar-placeholder {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: var(--red-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin: 1.25rem auto .75rem;
+  }
+
+  .dir-body {
+    padding: 0 1rem .75rem;
+    flex: 1;
+    display: flex; flex-direction: column; gap: .3rem;
+    text-align: center;
+  }
+  .dir-name { font-weight: 700; font-size: .95rem; color: var(--gray-900); }
+  .dir-desc {
+    font-size: .8rem; color: var(--gray-600); line-height: 1.5;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  }
+
+  /* ── Sección de links / redes sociales ────────────────── */
+  .dir-links {
+    padding: .6rem 1rem;
+    border-top: 1px solid var(--gray-100);
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    justify-content: center;
+  }
+  .dir-link-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    font-size: .78rem; font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .dir-link-instagram { background: #fce4ec; color: #ad1457; }
+  .dir-link-instagram:hover { background: #f8bbd9; }
+  .dir-link-tiktok { background: #e0f7fa; color: #006064; }
+  .dir-link-tiktok:hover { background: #b2ebf2; }
+  .dir-link-facebook { background: #e3f2fd; color: #1565c0; }
+  .dir-link-facebook:hover { background: #bbdefb; }
+  .dir-link-website { background: var(--gray-100); color: var(--gray-700); }
+  .dir-link-website:hover { background: var(--gray-200); }
+
+  /* ── Sección de contactos ─────────────────────────────── */
+  .dir-contacts {
+    padding: .5rem 1rem .75rem;
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    justify-content: center;
+  }
+  .dir-contact-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .3rem .65rem;
+    border-radius: 999px;
+    font-size: .78rem; font-weight: 500;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .dir-contact-phone    { background: #e8f5e9; color: #2e7d32; }
+  .dir-contact-phone:hover { background: #c8e6c9; }
+  .dir-contact-whatsapp { background: #e8f5e9; color: #1b5e20; }
+  .dir-contact-whatsapp:hover { background: #c8e6c9; }
+
+  /* ── Estado vacío ─────────────────────────────────────── */
+  .empty-state { text-align:center; padding:4rem 1rem; color:var(--gray-400); grid-column:1/-1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <h1>🛍️ Tiendas</h1>
+  <p>Tiendas especializadas en ropa, accesorios y artículos de cueca.</p>
+</div>
+
+<div class="dir-grid">
+  {% for s in stores %}
+  <div class="dir-card">
+
+    <!-- Imagen / avatar -->
+    {% if s.image_path %}
+      <img src="{{ url_for('static', filename=s.image_path) }}" alt="{{ s.name }}" class="dir-avatar">
+    {% else %}
+      <div class="dir-avatar-placeholder">🛍️</div>
+    {% endif %}
+
+    <!-- Nombre y descripción -->
+    <div class="dir-body">
+      <div class="dir-name">{{ s.name }}</div>
+      {% if s.description %}
+        <div class="dir-desc">{{ s.description }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Links: sitio web + redes sociales -->
+    {% set has_links = s.website_url or s.links %}
+    {% if has_links %}
+    <div class="dir-links">
+      {% if s.website_url %}
+        <a href="{{ s.website_url }}" target="_blank" rel="noopener"
+           class="dir-link-btn dir-link-website">
+          🌐 Sitio web
+        </a>
+      {% endif %}
+
+      {% for link in s.links %}
+        <a href="{{ link.url }}" target="_blank" rel="noopener"
+           class="dir-link-btn dir-link-{{ link.platform }}">
+          {% if link.platform == 'instagram' %}📸 {% elif link.platform == 'tiktok' %}🎵 {% elif link.platform == 'facebook' %}👥 {% else %}🌐 {% endif %}
+          {{ link.label or (link.platform|capitalize) }}
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Contactos: teléfono y WhatsApp -->
+    {% if s.contacts %}
+    <div class="dir-contacts">
+      {% for contact in s.contacts %}
+        {% if contact.kind == 'whatsapp' %}
+          <a href="https://wa.me/{{ contact.value | replace(' ', '') | replace('+', '') }}"
+             target="_blank" rel="noopener"
+             class="dir-contact-btn dir-contact-whatsapp"
+             title="{{ contact.label or 'WhatsApp' }}">
+            💬 {{ contact.label or contact.value }}
+          </a>
+        {% else %}
+          <a href="tel:{{ contact.value | replace(' ', '') }}"
+             class="dir-contact-btn dir-contact-phone"
+             title="{{ contact.label or 'Teléfono' }}">
+            📞 {{ contact.label or contact.value }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Si no tiene ningún link ni contacto, mostrar placeholder -->
+    {% if not has_links and not s.contacts %}
+    <div style="padding:.75rem 1rem;text-align:center;font-size:.78rem;color:var(--gray-300)">
+      Sin información de contacto
+    </div>
+    {% endif %}
+
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p style="font-size:2.5rem">🛍️</p>
+    <p>Aún no hay tiendas registradas.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}{{ e.title }} — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .show-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 2rem;
+    align-items: start;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  @media (max-width: 720px) {
+    .show-layout { grid-template-columns: 1fr; }
+    .show-img-col { max-width: 320px; margin: 0 auto; }
+  }
+  .show-img {
+    width: 100%;
+    aspect-ratio: 9/16;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: block;
+  }
+  .show-info-col { display: flex; flex-direction: column; gap: 1.25rem; }
+  .show-meta {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+  }
+  .show-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    line-height: 1.2;
+  }
+  .info-block {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+  }
+  .info-row { display: flex; gap: .75rem; align-items: flex-start; }
+  .info-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
+  .info-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--gray-400);
+    display: block;
+    margin-bottom: .15rem;
+  }
+  .info-value { font-size: .9rem; color: var(--gray-800); font-weight: 500; }
+  .description-block {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+  }
+  .description-block h4 {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--gray-400);
+    margin-bottom: .6rem;
+  }
+  .description-text {
+    font-size: .9rem;
+    color: var(--gray-700, #374151);
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+  .status-banner {
+    padding: .6rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .status-pending  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .status-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .status-expired  { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+  .mod-actions {
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1rem">
+  <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">← Volver</a>
+</div>
+
+{% if e.status != 'approved' %}
+  {% if e.status == 'pending' %}
+  <div class="status-banner status-pending" style="margin-bottom:1rem">⏳ Este evento está pendiente de aprobación y no es visible públicamente.</div>
+  {% elif e.status == 'rejected' %}
+  <div class="status-banner status-rejected" style="margin-bottom:1rem">✗ Este evento fue rechazado.</div>
+  {% endif %}
+{% endif %}
+{% if e.expired %}
+<div class="status-banner status-expired" style="margin-bottom:1rem">📅 Este evento ya se realizó.</div>
+{% endif %}
+
+<div class="show-layout">
+  <!-- Imagen -->
+  <div class="show-img-col">
+    <img src="{{ url_for('static', filename=e.image_path) }}" alt="{{ e.title }}" class="show-img">
+  </div>
+
+  <!-- Información -->
+  <div class="show-info-col">
+    <div class="show-meta">
+      <span class="badge badge-red">{{ e.kind }}</span>
+      {% if e.expired %}<span class="badge badge-default">Realizado</span>{% endif %}
+    </div>
+
+    <h1 class="show-title">{{ e.title }}</h1>
+
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-icon">📅</span>
+        <div>
+          <span class="info-label">Fecha</span>
+          <span class="info-value">
+            {{ e.date.strftime('%A %d de %B de %Y') | capitalize }}
+            {% if e.end_date and e.end_date != e.date %}
+              → {{ e.end_date.strftime('%A %d de %B de %Y') | capitalize }}
+            {% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">📍</span>
+        <div>
+          <span class="info-label">Lugar</span>
+          <span class="info-value">{{ e.place }}</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🗺️</span>
+        <div>
+          <span class="info-label">Ubicación</span>
+          <span class="info-value">{{ e.comuna }}, {{ e.region }}</span>
+        </div>
+      </div>
+      {% if e.contact_info %}
+      <div class="info-row">
+        <span class="info-icon">📞</span>
+        <div>
+          <span class="info-label">Contacto</span>
+          <span class="info-value">{{ e.contact_info }}</span>
+        </div>
+      </div>
+      {% endif %}
+      {% if e.bases_url %}
+      <div class="info-row">
+        <span class="info-icon">📄</span>
+        <div>
+          <span class="info-label">Bases y reglamento</span>
+          <span class="info-value">
+            <a href="{{ e.bases_url }}" target="_blank" rel="noopener" style="color:var(--red)">Descargar PDF →</a>
+          </span>
+        </div>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span class="info-icon">👤</span>
+        <div>
+          <span class="info-label">Publicado por</span>
+          <span class="info-value">{{ e.author.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="description-block">
+      <h4>Descripción</h4>
+      <p class="description-text">{{ e.description }}</p>
+    </div>
+
+    <!-- Acciones de moderación -->
+    {% if current_user.is_authenticated and current_user.role in ('moderator','admin') %}
+    <div class="mod-actions">
+      {% if e.status != 'approved' %}
+      <form method="post" action="{{ url_for('events.moderate', event_id=e.id, action='approve') }}">
+        <button type="submit" class="btn btn-success">✓ Aprobar</button>
+      </form>
+      {% endif %}
+      {% if e.status != 'rejected' %}
+      <form method="post" action="{{ url_for('events.moderate', event_id=e.id, action='reject') }}">
+        <button type="submit" class="btn btn-secondary">✗ Rechazar</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('events.delete', event_id=e.id) }}"
+            onsubmit="return confirm('¿Eliminar este evento permanentemente?')">
+        <button type="submit" class="btn btn-danger">🗑 Eliminar</button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

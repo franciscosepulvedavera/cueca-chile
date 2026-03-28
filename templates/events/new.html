@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Publicar evento — Cueca Chile{% endblock %}
+
+{% block head %}
+<style>
+  .form-wrap {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+  .form-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .form-header {
+    padding: 1.5rem 1.75rem 1rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .form-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  .form-header p {
+    font-size: .875rem;
+    color: var(--gray-400);
+    margin-top: .25rem;
+  }
+  .form-body { padding: 1.5rem 1.75rem; }
+  .form-section {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .form-section:last-of-type { border-bottom: none; margin-bottom: 0; }
+  .form-section-title {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--red);
+    margin-bottom: 1rem;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 580px) { .form-row { grid-template-columns: 1fr; } }
+  .preview-box {
+    border: 2px dashed var(--gray-200);
+    border-radius: var(--radius);
+    aspect-ratio: 9/16;
+    max-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-top: .5rem;
+    background: var(--gray-50);
+  }
+  .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-placeholder { text-align: center; color: var(--gray-400); font-size: .85rem; }
+  .preview-placeholder span { font-size: 2rem; display: block; margin-bottom: .5rem; }
+  .form-footer {
+    padding: 1.25rem 1.75rem;
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    justify-content: flex-end;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+  <div class="form-card">
+    <div class="form-header">
+      <h2>Publicar evento</h2>
+      <p>Tu evento será revisado antes de publicarse. Te notificaremos cuando sea aprobado.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="form-body">
+      {{ form.hidden_tag() }}
+
+      <!-- Información básica -->
+      <div class="form-section">
+        <div class="form-section-title">Información del evento</div>
+
+        <div class="field">
+          <label class="required" for="{{ form.title.id }}">Título</label>
+          {{ form.title(id=form.title.id, placeholder="Ej: Campeonato Regional de Cueca Escolar") }}
+          {% if form.title.errors %}<div class="field-error">{{ form.title.errors[0] }}</div>{% endif %}
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="required" for="{{ form.kind.id }}">Categoría</label>
+            {{ form.kind(id=form.kind.id) }}
+            {% if form.kind.errors %}<div class="field-error">{{ form.kind.errors[0] }}</div>{% endif %}
+          </div>
+          <div class="field">
+            <label class="required" for="{{ form.date.id }}">Fecha de inicio</label>
+            {{ form.date(id=form.date.id) }}
+            {% if form.date.errors %}<div class="field-error">{{ form.date.errors[0] }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="{{ form.end_date.id }}">Fecha de término <small style="font-weight:400;color:var(--gray-400)">(opcional, para eventos multi-día)</small></label>
+          {{ form.end_date(id=form.end_date.id) }}
+          {% if form.end_date.errors %}<div class="field-error">{{ form.end_date.errors[0] }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label class="required" for="{{ form.description.id }}">Descripción</label>
+          {{ form.description(id=form.description.id, placeholder="Describe el evento, categorías, requisitos, etc.") }}
+          {% if form.description.errors %}<div class="field-error">{{ form.description.errors[0] }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Ubicación -->
+      <div class="form-section">
+        <div class="form-section-title">Ubicación</div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="required" for="{{ form.region.id }}">Región</label>
+            {{ form.region(id=form.region.id) }}
+            {% if form.region.errors %}<div class="field-error">{{ form.region.errors[0] }}</div>{% endif %}
+          </div>
+          <div class="field">
+            <label class="required" for="{{ form.comuna.id }}">Comuna</label>
+            {{ form.comuna(id=form.comuna.id) }}
+            {% if form.comuna.errors %}<div class="field-error">{{ form.comuna.errors[0] }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required" for="{{ form.place.id }}">Dirección / Lugar</label>
+          {{ form.place(id=form.place.id, placeholder="Ej: Gimnasio Municipal, Av. Los Pajaritos 1234") }}
+          {% if form.place.errors %}<div class="field-error">{{ form.place.errors[0] }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Contacto y bases -->
+      <div class="form-section">
+        <div class="form-section-title">Contacto y bases</div>
+
+        <div class="field">
+          <label for="{{ form.contact_info.id }}">Información de contacto</label>
+          {{ form.contact_info(id=form.contact_info.id, placeholder="Ej: +56 9 1234 5678 · @cueca_region · info@evento.cl") }}
+          <div class="help">Teléfono, email, Instagram u otro contacto (opcional)</div>
+          {% if form.contact_info.errors %}<div class="field-error">{{ form.contact_info.errors[0] }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.bases_url.id }}">Enlace a bases (PDF)</label>
+          {{ form.bases_url(id=form.bases_url.id, placeholder="https://drive.google.com/...") }}
+          <div class="help">URL directa al PDF de bases y reglamento (opcional)</div>
+          {% if form.bases_url.errors %}<div class="field-error">{{ form.bases_url.errors[0] }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Imagen -->
+      <div class="form-section">
+        <div class="form-section-title">Imagen del evento</div>
+        <p style="font-size:.83rem;color:var(--gray-400);margin-bottom:.85rem">
+          La imagen será recortada y guardada en formato Instagram Story (1080 × 1920 px, 9:16 vertical).
+        </p>
+
+        <div class="field">
+          <label class="required" for="{{ form.image.id }}">Imagen (JPG / PNG / WEBP)</label>
+          {{ form.image(id=form.image.id, accept=".jpg,.jpeg,.png,.webp") }}
+          {% if form.image.errors %}<div class="field-error">{{ form.image.errors[0] }}</div>{% endif %}
+        </div>
+
+        <div class="preview-box" id="preview-box">
+          <div class="preview-placeholder" id="preview-placeholder">
+            <span>🖼️</span>Vista previa
+          </div>
+          <img id="preview-img" src="" alt="Vista previa" style="display:none">
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+        {{ form.submit(class_="btn btn-primary") }}
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ── Comunas dinámicas ──────────────────────────────────────────
+  const urlData = "{{ url_for('static', filename='data/chile-regiones-comunas.json') }}";
+  const $region = document.getElementById("{{ form.region.id }}");
+  const $comuna = document.getElementById("{{ form.comuna.id }}");
+  let DATA = null;
+
+  function setComunas(region, preselect) {
+    if (!DATA || !region) return;
+    const comunas = DATA[region] || [];
+    $comuna.innerHTML = "<option value=''>Selecciona una comuna</option>";
+    comunas.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      if (preselect && preselect === c) opt.selected = true;
+      $comuna.appendChild(opt);
+    });
+  }
+
+  fetch(urlData)
+    .then(r => r.json())
+    .then(json => {
+      DATA = json;
+      setComunas($region.value, "{{ form.comuna.data or '' }}");
+    });
+
+  $region.addEventListener("change", e => setComunas(e.target.value, null));
+
+  // ── Vista previa de imagen ─────────────────────────────────────
+  const $fileInput = document.getElementById("{{ form.image.id }}");
+  const $previewImg = document.getElementById("preview-img");
+  const $placeholder = document.getElementById("preview-placeholder");
+
+  $fileInput.addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      $previewImg.src = e.target.result;
+      $previewImg.style.display = "block";
+      $placeholder.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  });
+})();
+</script>
+{% endblock %}
