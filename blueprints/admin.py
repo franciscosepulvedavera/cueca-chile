@@ -21,13 +21,16 @@ from models import (
     User, Championship, HonorEntry, HonorEntryLink,
     ContentCreator, CreatorLink,
     Store, StoreLink, StoreContact,
+    Musician, MusicianLink, MusicianContact,
 )
 from forms import (
     AdminUserActionForm, ChangeRoleForm,
     ChampionshipForm, HonorEntryForm,
     ContentCreatorForm, StoreForm,
+    MusicianForm,
     STORE_PLATFORMS, STORE_CONTACT_KINDS,
     HONOR_PLATFORMS, CREATOR_PLATFORMS,
+    MUSICIAN_PLATFORMS, MUSICIAN_CONTACT_KINDS,
 )
 
 bp_admin = Blueprint("admin", __name__, url_prefix="/admin")
@@ -622,3 +625,120 @@ def store_delete(store_id):
     db.session.delete(s); db.session.commit()
     flash(f"Tienda «{s.name}» eliminada.", "info")
     return redirect(url_for("admin.stores"))
+
+
+# ══════════════════════════════════════════════════════════════════
+#  MÚSICOS
+# ══════════════════════════════════════════════════════════════════
+
+def _sync_musician_relations(musician: Musician, links: list[dict], contacts: list[dict]) -> None:
+    """Reemplaza los links y contactos de un músico con los nuevos datos."""
+    MusicianLink.query.filter_by(musician_id=musician.id).delete()
+    MusicianContact.query.filter_by(musician_id=musician.id).delete()
+    for d in links:
+        db.session.add(MusicianLink(musician_id=musician.id, **d))
+    for d in contacts:
+        db.session.add(MusicianContact(musician_id=musician.id, **d))
+
+
+def _parse_musician_contacts() -> list[dict]:
+    """Parsea contactos dinámicos (email/phone/whatsapp) del formulario."""
+    kinds  = request.form.getlist("contact_kind[]")
+    values = request.form.getlist("contact_value[]")
+    labels = request.form.getlist("contact_label[]")
+    result = []
+    for i, (kind, value) in enumerate(zip(kinds, values)):
+        kind  = kind.strip()
+        value = value.strip()
+        label = labels[i].strip() if i < len(labels) else ""
+        if kind and value:
+            result.append({"kind": kind, "value": value, "label": label or None})
+    return result
+
+
+@bp_admin.route("/musicos")
+@login_required
+def musicians():
+    _require_admin()
+    items = Musician.query.order_by(Musician.name.asc()).all()
+    return render_template("admin/musicians.html", musicians=items, form=AdminUserActionForm())
+
+
+@bp_admin.route("/musicos/new", methods=["GET", "POST"])
+@login_required
+def musician_new():
+    """Crear músico con links dinámicos de redes y contactos."""
+    _require_admin()
+    form = MusicianForm()
+    if form.validate_on_submit():
+        try:
+            img = _save_image_simple(form.image.data)
+            m = Musician(
+                name=form.name.data.strip(),
+                description=form.description.data.strip() if form.description.data else None,
+                image_path=img,
+                active=form.active.data,
+            )
+            db.session.add(m)
+            db.session.flush()
+
+            links    = _parse_dynamic_links("link")
+            contacts = _parse_musician_contacts()
+            _sync_musician_relations(m, links, contacts)
+
+            db.session.commit()
+            flash(f"✅ Músico «{m.name}» agregado.", "success")
+            return redirect(url_for("admin.musicians"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"❌ No se pudo guardar el músico. Error: {e}", "error")
+
+    return render_template("admin/musician_form.html", form=form,
+                           title="Nuevo músico",
+                           platforms=MUSICIAN_PLATFORMS,
+                           contact_kinds=MUSICIAN_CONTACT_KINDS)
+
+
+@bp_admin.route("/musicos/<int:musician_id>/edit", methods=["GET", "POST"])
+@login_required
+def musician_edit(musician_id):
+    """Editar músico con links y contactos dinámicos."""
+    _require_admin()
+    m    = Musician.query.get_or_404(musician_id)
+    form = MusicianForm(obj=m)
+    if form.validate_on_submit():
+        try:
+            m.name        = form.name.data.strip()
+            m.description = form.description.data.strip() if form.description.data else None
+            m.active      = form.active.data
+            if form.image.data and form.image.data.filename:
+                m.image_path = _save_image_simple(form.image.data)
+
+            links    = _parse_dynamic_links("link")
+            contacts = _parse_musician_contacts()
+            _sync_musician_relations(m, links, contacts)
+
+            db.session.commit()
+            flash(f"✅ Músico «{m.name}» actualizado.", "success")
+            return redirect(url_for("admin.musicians"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"❌ No se pudo actualizar el músico. Error: {e}", "error")
+
+    return render_template("admin/musician_form.html", form=form,
+                           title=f"Editar — {m.name}", musician=m,
+                           platforms=MUSICIAN_PLATFORMS,
+                           contact_kinds=MUSICIAN_CONTACT_KINDS)
+
+
+@bp_admin.post("/musicos/<int:musician_id>/delete")
+@login_required
+def musician_delete(musician_id):
+    _require_admin()
+    form = AdminUserActionForm()
+    if not form.validate_on_submit():
+        flash("Solicitud inválida.", "error"); return redirect(url_for("admin.musicians"))
+    m = Musician.query.get_or_404(musician_id)
+    db.session.delete(m); db.session.commit()
+    flash(f"Músico «{m.name}» eliminado.", "info")
+    return redirect(url_for("admin.musicians"))

@@ -25,6 +25,7 @@ from blueprints.championships import bp_championships    # Campeonatos nacionale
 from blueprints.creators import bp_creators              # Creadores de contenido (público)
 from blueprints.stores import bp_stores                  # Tiendas de cueca (público)
 from blueprints.results import bp_results                # Tabla de resultados por región (público)
+from blueprints.musicians import bp_musicians               # Músicos y agrupaciones (público)
 
 # Número de eventos por página en el listado principal
 PER_PAGE = 12
@@ -55,6 +56,7 @@ def create_app():
     app.register_blueprint(bp_creators)        # /creadores/...
     app.register_blueprint(bp_stores)          # /tiendas/...
     app.register_blueprint(bp_results)         # /resultados/...
+    app.register_blueprint(bp_musicians)       # /musicos/...
 
     # ── Tarea programada: expirar eventos pasados ─────────────────────────────
     # Se ejecuta todos los días a las 2:00 AM (hora de Santiago).

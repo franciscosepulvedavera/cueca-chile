@@ -262,3 +262,53 @@ class StoreContact(db.Model):
     kind     = db.Column(db.String(20), nullable=False)
     value    = db.Column(db.String(50),  nullable=False)
     label    = db.Column(db.String(100), nullable=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Músico / Agrupación
+# ─────────────────────────────────────────────────────────────────────────────
+class Musician(db.Model):
+    """
+    Músico, cantante o agrupación de cueca.
+    Solo el nombre es obligatorio. Todos los demás campos son opcionales.
+    links:    redes sociales (MusicianLink)
+    contacts: medios de contacto — email, teléfono, whatsapp (MusicianContact)
+    """
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    image_path  = db.Column(db.String(500), nullable=True)
+    active      = db.Column(db.Boolean, default=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    links    = db.relationship("MusicianLink",    backref="musician", lazy=True,
+                               cascade="all, delete-orphan")
+    contacts = db.relationship("MusicianContact", backref="musician", lazy=True,
+                               cascade="all, delete-orphan")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Link de Red Social — Músico
+# ─────────────────────────────────────────────────────────────────────────────
+class MusicianLink(db.Model):
+    """Red social o plataforma de un músico."""
+    id          = db.Column(db.Integer, primary_key=True)
+    musician_id = db.Column(db.Integer, db.ForeignKey("musician.id"), nullable=False)
+    platform    = db.Column(db.String(30),  nullable=False)
+    url         = db.Column(db.String(500), nullable=False)
+    label       = db.Column(db.String(100), nullable=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Contacto — Músico
+# ─────────────────────────────────────────────────────────────────────────────
+class MusicianContact(db.Model):
+    """
+    Medio de contacto de un músico.
+    kind: email | phone | whatsapp
+    """
+    id          = db.Column(db.Integer, primary_key=True)
+    musician_id = db.Column(db.Integer, db.ForeignKey("musician.id"), nullable=False)
+    kind        = db.Column(db.String(20), nullable=False)  # email|phone|whatsapp
+    value       = db.Column(db.String(200), nullable=False)
+    label       = db.Column(db.String(100), nullable=True)

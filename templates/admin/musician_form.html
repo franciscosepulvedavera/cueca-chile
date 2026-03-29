@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}{{ title or 'Músico' }} — Admin{% endblock %}
+
+{% block head %}
+<style>
+  .form-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gray-100);
+  }
+  .form-section-title {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 1rem;
+  }
+  .dyn-row {
+    display: grid;
+    gap: .5rem;
+    align-items: center;
+    margin-bottom: .5rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: .6rem .75rem;
+  }
+  .dyn-row-links    { grid-template-columns: 140px 1fr 130px auto; }
+  .dyn-row-contacts { grid-template-columns: 120px 1fr 130px auto; }
+  .dyn-row select, .dyn-row input {
+    padding: .45rem .7rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: var(--white);
+    outline: none;
+  }
+  .dyn-row select:focus, .dyn-row input:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+  }
+  .dyn-row .remove-btn { padding: .35rem .6rem; font-size: .85rem; flex-shrink: 0; }
+  .add-row-btn {
+    font-size: .82rem; margin-top: .4rem; width: 100%;
+    justify-content: center; border-style: dashed;
+  }
+  .dyn-empty { font-size: .8rem; color: var(--gray-400); padding: .5rem 0; text-align: center; }
+  .field-hint { font-size: .78rem; color: var(--gray-400); margin-top: .25rem; }
+
+  @media (max-width: 640px) {
+    .dyn-row-links, .dyn-row-contacts {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+    .dyn-row-links .remove-btn, .dyn-row-contacts .remove-btn {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:680px;margin:0 auto">
+
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a href="{{ url_for('admin.musicians') }}" class="btn btn-secondary btn-sm">← Volver</a>
+    <h1 style="font-size:1.15rem;font-weight:700">{{ title or '🎵 Músico' }}</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" id="musician-form">
+        {{ form.hidden_tag() }}
+
+        <!-- DATOS BÁSICOS -->
+        <div class="field">
+          <label class="required" for="{{ form.name.id }}">Nombre del músico o agrupación</label>
+          {{ form.name(id=form.name.id, placeholder="Ej: Los Chileneros") }}
+          {% if form.name.errors %}<div class="field-error">{{ form.name.errors[0] }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.description.id }}">Descripción <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
+          {{ form.description(id=form.description.id, placeholder="Estilo, trayectoria, región, etc.") }}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.image.id }}">Foto / Logo <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
+          {% if musician and musician.image_path %}
+          <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem">
+            <img src="{{ url_for('static', filename=musician.image_path) }}"
+                 style="height:56px;width:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gray-200)">
+            <span class="field-hint">Sube una nueva imagen para reemplazarla.</span>
+          </div>
+          {% endif %}
+          {{ form.image(id=form.image.id, accept=".jpg,.jpeg,.png,.webp") }}
+        </div>
+
+        <div class="field" style="display:flex;align-items:center;gap:.6rem">
+          {{ form.active(id=form.active.id) }}
+          <label for="{{ form.active.id }}" style="margin:0;font-weight:500">Visible en el sitio</label>
+        </div>
+
+        <!-- REDES SOCIALES -->
+        <div class="form-section">
+          <div class="form-section-title">📱 Redes Sociales</div>
+          <div class="field-hint" style="margin-bottom:.75rem">
+            Agrega los perfiles del músico. Ninguno es obligatorio.
+          </div>
+          <div id="links-container">
+            {% if musician and musician.links %}
+              {% for link in musician.links %}
+              <div class="dyn-row dyn-row-links">
+                <select name="link_platform[]">
+                  {% for val, lbl in platforms %}
+                  <option value="{{ val }}" {% if link.platform == val %}selected{% endif %}>{{ lbl }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="link_url[]" value="{{ link.url }}" placeholder="https://...">
+                <input type="text" name="link_label[]" value="{{ link.label or '' }}" placeholder="Etiqueta (opcional)">
+                <button type="button" class="btn btn-danger btn-sm remove-btn"
+                        onclick="removeRow(this)" title="Eliminar">✕</button>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="dyn-empty" id="links-empty">Sin redes sociales agregadas.</div>
+            {% endif %}
+          </div>
+          <button type="button" class="btn btn-secondary add-row-btn" onclick="addLink()">
+            + Agregar red social
+          </button>
+        </div>
+
+        <!-- CONTACTOS -->
+        <div class="form-section">
+          <div class="form-section-title">📞 Contacto</div>
+          <div class="field-hint" style="margin-bottom:.75rem">
+            Agrega email, teléfono o WhatsApp. El contacto también puede ser por redes sociales (sección de arriba).
+          </div>
+          <div id="contacts-container">
+            {% if musician and musician.contacts %}
+              {% for contact in musician.contacts %}
+              <div class="dyn-row dyn-row-contacts">
+                <select name="contact_kind[]">
+                  {% for val, lbl in contact_kinds %}
+                  <option value="{{ val }}" {% if contact.kind == val %}selected{% endif %}>{{ lbl }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="contact_value[]" value="{{ contact.value }}" placeholder="valor del contacto">
+                <input type="text" name="contact_label[]" value="{{ contact.label or '' }}" placeholder="Etiqueta (opcional)">
+                <button type="button" class="btn btn-danger btn-sm remove-btn"
+                        onclick="removeRow(this)" title="Eliminar">✕</button>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="dyn-empty" id="contacts-empty">Sin contactos agregados.</div>
+            {% endif %}
+          </div>
+          <button type="button" class="btn btn-secondary add-row-btn" onclick="addContact()">
+            + Agregar contacto
+          </button>
+        </div>
+
+        <!-- ACCIONES -->
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem">
+          <a href="{{ url_for('admin.musicians') }}" class="btn btn-secondary">Cancelar</a>
+          {{ form.submit(class_="btn btn-primary") }}
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PLATFORMS = [
+    {% for val, lbl in platforms %}
+    { value: "{{ val }}", label: "{{ lbl }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  const CONTACT_KINDS = [
+    {% for val, lbl in contact_kinds %}
+    { value: "{{ val }}", label: "{{ lbl }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function removeRow(btn) {
+    const row = btn.closest('.dyn-row');
+    const container = row.parentElement;
+    row.remove();
+    const emptyMsgId = container.id === 'links-container' ? 'links-empty' : 'contacts-empty';
+    if (container.querySelectorAll('.dyn-row').length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.className = 'dyn-empty';
+      emptyMsg.id = emptyMsgId;
+      emptyMsg.textContent = container.id === 'links-container'
+        ? 'Sin redes sociales agregadas.' : 'Sin contactos agregados.';
+      container.appendChild(emptyMsg);
+    }
+  }
+
+  function buildOptions(optList, selectedVal) {
+    return optList.map(o =>
+      `<option value="${o.value}" ${o.value === selectedVal ? 'selected' : ''}>${o.label}</option>`
+    ).join('');
+  }
+
+  function addLink() {
+    const container = document.getElementById('links-container');
+    const emptyMsg  = document.getElementById('links-empty');
+    if (emptyMsg) emptyMsg.remove();
+    const row = document.createElement('div');
+    row.className = 'dyn-row dyn-row-links';
+    row.innerHTML = `
+      <select name="link_platform[]">${buildOptions(PLATFORMS, 'instagram')}</select>
+      <input type="text" name="link_url[]" placeholder="https://instagram.com/musico">
+      <input type="text" name="link_label[]" placeholder="Etiqueta (opcional)">
+      <button type="button" class="btn btn-danger btn-sm remove-btn"
+              onclick="removeRow(this)" title="Eliminar">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input[name="link_url[]"]').focus();
+  }
+
+  function addContact() {
+    const container = document.getElementById('contacts-container');
+    const emptyMsg  = document.getElementById('contacts-empty');
+    if (emptyMsg) emptyMsg.remove();
+    const row = document.createElement('div');
+    row.className = 'dyn-row dyn-row-contacts';
+    row.innerHTML = `
+      <select name="contact_kind[]">${buildOptions(CONTACT_KINDS, 'email')}</select>
+      <input type="text" name="contact_value[]" placeholder="contacto@ejemplo.cl">
+      <input type="text" name="contact_label[]" placeholder="Etiqueta (opcional)">
+      <button type="button" class="btn btn-danger btn-sm remove-btn"
+              onclick="removeRow(this)" title="Eliminar">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('input[name="contact_value[]"]').focus();
+  }
+</script>
+{% endblock %}

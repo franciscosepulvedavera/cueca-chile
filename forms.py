@@ -67,6 +67,24 @@ CREATOR_PLATFORMS = [
     ("website",   "Sitio Web"),
 ]
 
+# Plataformas para músicos
+MUSICIAN_PLATFORMS = [
+    ("instagram",  "Instagram"),
+    ("tiktok",     "TikTok"),
+    ("facebook",   "Facebook"),
+    ("youtube",    "YouTube"),
+    ("spotify",    "Spotify"),
+    ("soundcloud", "SoundCloud"),
+    ("website",    "Sitio Web"),
+]
+
+# Tipos de contacto para músicos
+MUSICIAN_CONTACT_KINDS = [
+    ("email",    "Email"),
+    ("phone",    "Teléfono"),
+    ("whatsapp", "WhatsApp"),
+]
+
 # Posiciones del cuadro de honor:
 #   0 = Pareja más popular (reconocimiento especial, no competitivo)
 #   1-4 = lugares competitivos
@@ -225,5 +243,21 @@ class StoreForm(FlaskForm):
         description="Ej: Av. Providencia 123, Local 4, Santiago. Déjalo vacío si es solo online.",
     )
     image       = FileField("Logo / Imagen (JPG/PNG/WEBP)", validators=[Optional()])
+    active      = BooleanField("Visible en el sitio", default=True)
+    submit      = SubmitField("Guardar")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Músicos
+# ─────────────────────────────────────────────────────────────────────────────
+
+class MusicianForm(FlaskForm):
+    """
+    Solo el nombre es obligatorio.
+    Links de redes sociales y contactos se manejan dinámicamente (fuera de WTForms).
+    """
+    name        = StringField("Nombre del músico o agrupación", validators=[DataRequired(), Length(max=150)])
+    description = TextAreaField("Descripción breve", validators=[Optional()])
+    image       = FileField("Foto / Logo (JPG/PNG/WEBP)", validators=[Optional()])
     active      = BooleanField("Visible en el sitio", default=True)
     submit      = SubmitField("Guardar")
