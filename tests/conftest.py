@@ -1,5 +1,5 @@
 # =============================================================================
-# tests/conftest.py — Fixtures globales para la suite de tests
+# tests/conftest.py — Fixtures globales y hooks de reporte para la suite
 #
 # Uso:
 #   cd tests/
@@ -18,6 +18,7 @@
 # =============================================================================
 
 import os
+import base64
 import pytest
 from datetime import datetime
 from dotenv import load_dotenv
@@ -33,12 +34,7 @@ HEADLESS       = os.getenv("HEADLESS",        "true").lower() == "true"
 BROWSER_NAME   = os.getenv("BROWSER",         "chromium")
 
 
-# ─── Opciones de Playwright (se inyectan en pytest-playwright) ────────────────
-
-def pytest_addoption(parser):
-    """Permite pasar --headed desde la CLI para ver el navegador."""
-    pass  # pytest-playwright ya provee --headed / --browser
-
+# ─── Opciones de Playwright ───────────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args):
@@ -105,3 +101,211 @@ def anon_page(browser):
 def admin_credentials():
     """Credenciales del admin como dict."""
     return {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+
+
+# =============================================================================
+# REPORTE: captura de pasos, screenshots y métricas por escenario
+# =============================================================================
+
+# Almacenamiento en memoria durante la sesión
+_step_logs  = {}   # {nodeid: [ {keyword, name, status, screenshot, error, url} ]}
+_test_pages = {}   # {nodeid: page}  — referencia al objeto Page activo
+
+
+def _find_page(args: dict):
+    """Busca el objeto Page en un dict de fixtures/args."""
+    for name in ("admin_page", "anon_page", "pagina", "pag", "page"):
+        obj = args.get(name)
+        if obj is not None:
+            return obj
+    return None
+
+
+def _capture_screenshot(page) -> str | None:
+    """Devuelve screenshot en base64 o None si falla."""
+    try:
+        return base64.b64encode(page.screenshot(full_page=True)).decode()
+    except Exception:
+        return None
+
+
+def _current_url(page) -> str:
+    """Devuelve la URL actual del navegador o cadena vacía."""
+    try:
+        return page.url
+    except Exception:
+        return ""
+
+
+# ── Hook: inicio de escenario ─────────────────────────────────────────────────
+
+@pytest.hookimpl
+def pytest_bdd_before_scenario(request, feature, scenario):
+    nodeid = request.node.nodeid
+    _step_logs[nodeid] = []
+    # Intenta cachear la página desde los fixtures ya inicializados
+    page = _find_page(request.node.funcargs)
+    if page:
+        _test_pages[nodeid] = page
+
+
+# ── Hook: paso completado con éxito ───────────────────────────────────────────
+
+@pytest.hookimpl
+def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
+    nodeid = request.node.nodeid
+    page = _find_page(step_func_args) or _test_pages.get(nodeid)
+    if page:
+        _test_pages[nodeid] = page
+
+    _step_logs.setdefault(nodeid, []).append({
+        "keyword":    step.keyword,
+        "name":       step.name,
+        "status":     "passed",
+        "screenshot": _capture_screenshot(page) if page else None,
+        "url":        _current_url(page) if page else "",
+        "error":      None,
+    })
+
+
+# ── Hook: paso fallido ────────────────────────────────────────────────────────
+
+@pytest.hookimpl
+def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func_args, exception):
+    nodeid = request.node.nodeid
+    page = _find_page(step_func_args) or _test_pages.get(nodeid)
+    if page:
+        _test_pages[nodeid] = page
+
+    _step_logs.setdefault(nodeid, []).append({
+        "keyword":    step.keyword,
+        "name":       step.name,
+        "status":     "failed",
+        "screenshot": _capture_screenshot(page) if page else None,
+        "url":        _current_url(page) if page else "",
+        "error":      str(exception),
+    })
+
+
+# ── Construcción del bloque HTML de pasos ─────────────────────────────────────
+
+_KW_COLORS = {
+    "Given": "#5B8DD9",
+    "When":  "#5BAD6F",
+    "Then":  "#D4AC0D",
+    "And":   "#9B59B6",
+    "But":   "#E74C3C",
+}
+
+
+def _build_steps_html(steps: list) -> str:
+    """Genera el bloque HTML colapsable con pasos y screenshots."""
+    if not steps:
+        return ""
+
+    parts = [
+        '<div style="font-family:\'Courier New\', monospace; font-size:12px; '
+        'margin-top:10px; border-top:1px solid #e0e0e0; padding-top:8px;">'
+        '<strong style="font-size:13px; color:#333;">📋 Pasos del escenario</strong>'
+    ]
+
+    for step in steps:
+        passed  = step["status"] == "passed"
+        icon    = "✅" if passed else "❌"
+        border  = "#4CAF50" if passed else "#F44336"
+        kw_col  = _KW_COLORS.get(step["keyword"], "#666")
+        bg      = "#f9fff9" if passed else "#fff5f5"
+
+        parts.append(
+            f'<details style="margin:4px 0; border-left:3px solid {border}; '
+            f'background:{bg}; padding:4px 8px; border-radius:0 4px 4px 0;">'
+            f'<summary style="cursor:pointer; list-style:none; padding:2px 0;">'
+            f'{icon} '
+            f'<span style="color:{kw_col}; font-weight:bold;">{step["keyword"]}</span> '
+            f'{step["name"]}'
+        )
+
+        if step.get("url"):
+            parts.append(
+                f' <span style="color:#999; font-size:10px; margin-left:8px;">'
+                f'🌐 {step["url"]}</span>'
+            )
+
+        parts.append('</summary>')
+
+        if step.get("error"):
+            err_safe = (
+                step["error"]
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+            )
+            parts.append(
+                f'<pre style="background:#ffebee; color:#c62828; padding:8px; '
+                f'margin:6px 0; border-radius:4px; font-size:11px; '
+                f'overflow-x:auto; white-space:pre-wrap;">{err_safe}</pre>'
+            )
+
+        if step.get("screenshot"):
+            parts.append(
+                f'<div style="margin:6px 0;">'
+                f'<img src="data:image/png;base64,{step["screenshot"]}" '
+                f'style="max-width:100%; border:1px solid #ddd; border-radius:4px; '
+                f'cursor:zoom-in; display:block;" '
+                f'onclick="this.style.maxWidth=this.style.maxWidth===\'100%\'?\'none\':\'100%\'" />'
+                f'</div>'
+            )
+
+        parts.append('</details>')
+
+    parts.append('</div>')
+    return "".join(parts)
+
+
+# ── Hook: adjuntar HTML al reporte pytest-html ────────────────────────────────
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report  = outcome.get_result()
+
+    if report.when != "call":
+        return
+
+    html_plugin = item.config.pluginmanager.getplugin("html")
+    if not html_plugin:
+        return
+
+    nodeid = item.nodeid
+    steps  = _step_logs.get(nodeid, [])
+
+    extras = getattr(report, "extras", [])
+
+    if steps:
+        extras.append(html_plugin.extras.html(_build_steps_html(steps)))
+
+    # Screenshot final (estado de la página al terminar el test)
+    page = _test_pages.get(nodeid)
+    if page and report.failed:
+        sc = _capture_screenshot(page)
+        if sc:
+            extras.append(html_plugin.extras.image(sc, mime_type="image/png"))
+
+    report.extras = extras
+
+
+# ── Personalización del reporte HTML ──────────────────────────────────────────
+
+def pytest_html_report_title(report):
+    report.title = "🎶 Cueca Chile — Reporte de Pruebas"
+
+
+def pytest_configure(config):
+    config._metadata = {
+        "Proyecto":  "🎶 Cueca Chile",
+        "URL":       BASE_URL,
+        "Navegador": BROWSER_NAME,
+        "Headless":  str(HEADLESS),
+        "Fecha":     datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "Admin":     ADMIN_EMAIL,
+    }

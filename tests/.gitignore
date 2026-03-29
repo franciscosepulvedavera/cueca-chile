@@ -1,0 +1,12 @@
+# Reportes generados (no subir al repo)
+reports/*.html
+reports/*.json
+reports/assets/
+
+# Entorno local
+.env.test
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
