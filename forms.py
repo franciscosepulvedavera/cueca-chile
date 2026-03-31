@@ -34,6 +34,14 @@ REGIONES = [
     ("Magallanes",         "Magallanes"),
 ]
 
+# Plataformas para campeonatos
+CHAMPIONSHIP_PLATFORMS = [
+    ("instagram", "Instagram"),
+    ("tiktok",    "TikTok"),
+    ("facebook",  "Facebook"),
+    ("website",   "Sitio Web"),
+]
+
 # Plataformas para tiendas
 STORE_PLATFORMS = [
     ("instagram", "Instagram"),

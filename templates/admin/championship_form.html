@@ -138,7 +138,32 @@
           </label>
         </div>
 
-        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem">
+        <!-- ── Redes Sociales ── -->
+        <div style="margin-top:1.25rem;padding-top:1.1rem;border-top:1.5px solid var(--gray-100)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <label style="font-weight:600;font-size:.875rem">Redes Sociales</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addChampLink()">+ Agregar red</button>
+          </div>
+          <div id="champ-links-container">
+            {% if champ and champ.links %}
+              {% for link in champ.links %}
+              <div class="link-row" style="display:grid;grid-template-columns:140px 1fr 120px auto;gap:.5rem;align-items:center;margin-bottom:.4rem">
+                <select name="champ_platform[]" class="field" style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">
+                  {% for val, label in championship_platforms %}
+                  <option value="{{ val }}" {% if link.platform == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input type="url" name="champ_url[]" value="{{ link.url }}" placeholder="https://..." class="field" style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">
+                <input type="text" name="champ_label[]" value="{{ link.label or '' }}" placeholder="Etiqueta (opcional)" class="field" style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">
+                <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          <p class="help" style="margin-top:.4rem">Agrega los perfiles de Instagram, TikTok o Facebook del campeonato.</p>
+        </div>
+
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
           <a href="{{ url_for('admin.championships') }}" class="btn btn-secondary">Cancelar</a>
           {{ form.submit(class_="btn btn-primary") }}
         </div>
@@ -237,4 +262,21 @@
   {% endif %}
 
 </div>
+
+<script>
+const CHAMP_PLATFORMS = {{ championship_platforms | tojson }};
+function addChampLink() {
+  const opts = CHAMP_PLATFORMS.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.style = 'display:grid;grid-template-columns:140px 1fr 120px auto;gap:.5rem;align-items:center;margin-bottom:.4rem';
+  row.innerHTML = `
+    <select name="champ_platform[]" style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">${opts}</select>
+    <input type="url" name="champ_url[]" placeholder="https://..." style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">
+    <input type="text" name="champ_label[]" placeholder="Etiqueta (opcional)" style="margin:0;padding:.5rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.85rem">
+    <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+  `;
+  document.getElementById('champ-links-container').appendChild(row);
+}
+</script>
 {% endblock %}

@@ -18,7 +18,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 from extensions import db
 from models import (
-    User, Championship, HonorEntry, HonorEntryLink,
+    User, Championship, ChampionshipLink, HonorEntry, HonorEntryLink,
     ContentCreator, CreatorLink,
     Store, StoreLink, StoreContact,
     Musician, MusicianLink, MusicianContact,
@@ -28,6 +28,7 @@ from forms import (
     ChampionshipForm, HonorEntryForm,
     ContentCreatorForm, StoreForm,
     MusicianForm,
+    CHAMPIONSHIP_PLATFORMS,
     STORE_PLATFORMS, STORE_CONTACT_KINDS,
     HONOR_PLATFORMS, CREATOR_PLATFORMS,
     MUSICIAN_PLATFORMS, MUSICIAN_CONTACT_KINDS,
@@ -122,6 +123,13 @@ def _sync_creator_links(creator: ContentCreator, links: list[dict]) -> None:
     CreatorLink.query.filter_by(creator_id=creator.id).delete()
     for d in links:
         db.session.add(CreatorLink(creator_id=creator.id, **d))
+
+
+def _sync_championship_links(champ: Championship, links: list[dict]) -> None:
+    """Reemplaza los links de un campeonato con los nuevos datos."""
+    ChampionshipLink.query.filter_by(championship_id=champ.id).delete()
+    for d in links:
+        db.session.add(ChampionshipLink(championship_id=champ.id, **d))
 
 
 def _sync_honor_links(entry: HonorEntry, links: list[dict]) -> None:
@@ -247,6 +255,8 @@ def championship_new():
                 active=form.active.data,
             )
             db.session.add(c)
+            db.session.flush()
+            _sync_championship_links(c, _parse_dynamic_links("champ"))
             db.session.commit()
             flash(f"✅ Campeonato «{c.name}» creado correctamente.", "success")
             return redirect(url_for("admin.championships"))
@@ -255,7 +265,8 @@ def championship_new():
             flash(f"❌ No se pudo guardar el campeonato. Error: {e}", "error")
 
     return render_template("admin/championship_form.html", form=form,
-                           title="Nuevo campeonato", champ=None)
+                           title="Nuevo campeonato", champ=None,
+                           championship_platforms=CHAMPIONSHIP_PLATFORMS)
 
 
 @bp_admin.route("/campeonatos/<int:champ_id>/edit", methods=["GET", "POST"])
@@ -282,6 +293,7 @@ def championship_edit(champ_id):
             c.active      = form.active.data
             if form.image.data and form.image.data.filename:
                 c.image_path = _save_image_simple(form.image.data)
+            _sync_championship_links(c, _parse_dynamic_links("champ"))
             db.session.commit()
             flash(f"✅ Campeonato «{c.name}» actualizado correctamente.", "success")
             return redirect(url_for("admin.championships"))
@@ -290,7 +302,8 @@ def championship_edit(champ_id):
             flash(f"❌ No se pudo guardar el campeonato. Error: {e}", "error")
 
     return render_template("admin/championship_form.html", form=form,
-                           title=f"Editar — {c.name}", champ=c)
+                           title=f"Editar — {c.name}", champ=c,
+                           championship_platforms=CHAMPIONSHIP_PLATFORMS)
 
 
 @bp_admin.post("/campeonatos/<int:champ_id>/delete")

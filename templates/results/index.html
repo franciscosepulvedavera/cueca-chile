@@ -77,8 +77,19 @@
 {% block content %}
 <div class="section-header">
   <h1>📊 Tabla de Resultados</h1>
-  <p>Conteo acumulado de 1°, 2°, 3° y 4° lugares por región, calculado desde los cuadros de honor de todos los campeonatos nacionales.</p>
+  <p>Conteo de 1°, 2°, 3° y 4° lugares por región{% if selected_year %} — año <strong>{{ selected_year }}</strong>{% else %} — todos los años{% endif %}.</p>
 </div>
+
+{% if available_years %}
+<div class="filter-bar" style="margin-bottom:1.25rem">
+  <a href="{{ url_for('results.index') }}"
+     class="filter-tab {% if not selected_year %}active{% endif %}">Todos</a>
+  {% for y in available_years %}
+  <a href="{{ url_for('results.index', year=y) }}"
+     class="filter-tab {% if selected_year == y %}active{% endif %}">{{ y }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div class="results-card">
   <table class="results-table">

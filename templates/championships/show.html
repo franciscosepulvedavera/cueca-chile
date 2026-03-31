@@ -122,6 +122,21 @@
         🌐 <a href="{{ champ.website_url }}" target="_blank" rel="noopener" style="color:var(--red)">Sitio oficial</a>
       </div>
       {% endif %}
+      {% if champ.links %}
+      <div class="champ-meta-row" style="gap:.4rem;flex-wrap:wrap">
+        {% for link in champ.links %}
+          <a href="{{ link.url }}" target="_blank" rel="noopener"
+             class="honor-link-dot"
+             title="{{ link.platform|capitalize }}{% if link.label %}: {{ link.label }}{% endif %}"
+             style="width:32px;height:32px;font-size:.95rem">
+            {% if link.platform == 'instagram' %}📸
+            {% elif link.platform == 'tiktok' %}🎵
+            {% elif link.platform == 'facebook' %}👥
+            {% else %}🌐{% endif %}
+          </a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     {% if champ.description %}
     <p class="champ-desc">{{ champ.description }}</p>

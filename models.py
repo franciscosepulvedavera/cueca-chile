@@ -110,6 +110,10 @@ class Championship(db.Model):
         "HonorEntry", backref="championship",
         lazy="dynamic", cascade="all, delete-orphan",
     )
+    links = db.relationship(
+        "ChampionshipLink", backref="championship",
+        lazy=True, cascade="all, delete-orphan",
+    )
 
     def years(self):
         """Años únicos con entradas, de más reciente a más antiguo."""
@@ -120,6 +124,18 @@ class Championship(db.Model):
             .order_by(HonorEntry.year.desc()).all()
         )
         return [r[0] for r in result]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Link de Red Social — Campeonato
+# ─────────────────────────────────────────────────────────────────────────────
+class ChampionshipLink(db.Model):
+    """Red social o URL de un campeonato. platform: instagram|tiktok|facebook|website"""
+    id                = db.Column(db.Integer, primary_key=True)
+    championship_id   = db.Column(db.Integer, db.ForeignKey("championship.id"), nullable=False)
+    platform          = db.Column(db.String(30),  nullable=False)
+    url               = db.Column(db.String(500), nullable=False)
+    label             = db.Column(db.String(100), nullable=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
