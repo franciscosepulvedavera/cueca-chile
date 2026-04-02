@@ -135,7 +135,7 @@
           <label for="{{ form.image.id }}">Logo / Imagen <span style="font-weight:400;color:var(--gray-400)">(opcional)</span></label>
           {% if store and store.image_path %}
           <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem">
-            <img src="{{ url_for('static', filename=store.image_path) }}"
+            <img src="{{ img_url(store.image_path) }}"
                  style="height:56px;width:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gray-200)">
             <span class="field-hint">Sube una nueva imagen para reemplazarla.</span>
           </div>

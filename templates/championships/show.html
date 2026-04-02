@@ -106,7 +106,7 @@
 <div class="champ-hero">
   <div>
     {% if champ.image_path %}
-      <img src="{{ url_for('static', filename=champ.image_path) }}" alt="{{ champ.name }}" class="champ-hero-img">
+      <img src="{{ img_url(champ.image_path) }}" alt="{{ champ.name }}" class="champ-hero-img">
     {% else %}
       <div class="champ-hero-placeholder">🏆</div>
     {% endif %}

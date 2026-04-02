@@ -24,7 +24,7 @@
           <td>
             <div style="display:flex;align-items:center;gap:.6rem">
               {% if c.image_path %}
-                <img src="{{ url_for('static', filename=c.image_path) }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+                <img src="{{ img_url(c.image_path) }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
               {% else %}
                 <div style="width:32px;height:32px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;font-size:.9rem">🎥</div>
               {% endif %}

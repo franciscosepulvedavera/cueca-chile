@@ -68,7 +68,7 @@
   {% for c in championships %}
   <a href="{{ url_for('championships.show', champ_id=c.id) }}" class="champ-card">
     {% if c.image_path %}
-      <img src="{{ url_for('static', filename=c.image_path) }}" alt="{{ c.name }}" class="champ-img" loading="lazy">
+      <img src="{{ img_url(c.image_path) }}" alt="{{ c.name }}" class="champ-img" loading="lazy">
     {% else %}
       <div class="champ-img-placeholder">🥇</div>
     {% endif %}

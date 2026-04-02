@@ -123,7 +123,7 @@
           <label for="{{ form.image.id }}">Imagen del campeonato (JPG/PNG/WEBP)</label>
           {% if champ and champ.image_path %}
           <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem">
-            <img src="{{ url_for('static', filename=champ.image_path) }}"
+            <img src="{{ img_url(champ.image_path) }}"
                  style="height:60px;border-radius:var(--radius-sm);object-fit:cover">
             <span class="help">Sube una nueva imagen para reemplazarla.</span>
           </div>

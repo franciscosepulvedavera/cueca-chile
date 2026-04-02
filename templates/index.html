@@ -122,7 +122,7 @@
   {% set kind_slug = e.kind | lower | replace('/', '-') | replace(' ', '-') %}
   <a href="{{ url_for('events.show', event_id=e.id) }}" class="event-card">
     <img
-      src="{{ url_for('static', filename=e.image_path) }}"
+      src="{{ img_url(e.image_path) }}"
       alt="{{ e.title }}"
       class="event-card-img"
       loading="lazy">

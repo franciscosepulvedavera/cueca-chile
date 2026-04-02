@@ -10,8 +10,9 @@
 #   python app.py      → inicio directo (debug=True)
 # =============================================================================
 
+import os
 from datetime import date
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from config import Config
 from extensions import db, login_manager, migrate, scheduler
 from models import Event, User
@@ -46,6 +47,27 @@ def create_app():
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Debes iniciar sesión para acceder."
     login_manager.login_message_category = "warning"
+
+    # ── Cloudinary: inicializar si la variable de entorno está configurada ─────
+    cloudinary_url = os.getenv("CLOUDINARY_URL", "")
+    if cloudinary_url:
+        import cloudinary
+        cloudinary.config(cloudinary_url=cloudinary_url)
+
+    # ── Helper global de imágenes: resuelve URLs locales y de Cloudinary ──────
+    @app.template_global()
+    def img_url(path: str | None) -> str | None:
+        """
+        Retorna la URL correcta de una imagen sin importar dónde esté almacenada.
+        - Si es una URL completa (Cloudinary/S3): la devuelve tal cual.
+        - Si es una ruta relativa local (uploads/...): genera la URL estática.
+        - Si es None: devuelve None (los templates muestran el placeholder).
+        """
+        if not path:
+            return None
+        if path.startswith("http://") or path.startswith("https://"):
+            return path
+        return url_for("static", filename=path)
 
     # ── Registro de blueprints ────────────────────────────────────────────────
     app.register_blueprint(bp_auth)            # /auth/...

@@ -1,0 +1,43 @@
+# .railwayignore — Archivos excluidos del deploy en Railway (railway up)
+# A diferencia de .gitignore, este archivo NO excluye static/uploads/
+# para que las imágenes locales se incluyan en cada deploy.
+
+# Entorno virtual y dependencias locales
+venv/
+.venv/
+
+# Variables de entorno (nunca al servidor)
+.env
+.env.test
+tests/.env.test
+
+# Base de datos local (Railway usa PostgreSQL, no SQLite)
+instance/
+*.db
+*.sqlite3
+
+# Python compilado
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Suite de pruebas (no necesaria en producción)
+tests/
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+
+# Cache de Railway/Nixpacks
+.nixpacks/

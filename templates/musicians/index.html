@@ -116,7 +116,7 @@
   <div class="dir-card">
 
     {% if m.image_path %}
-      <img src="{{ url_for('static', filename=m.image_path) }}" alt="{{ m.name }}" class="dir-avatar">
+      <img src="{{ img_url(m.image_path) }}" alt="{{ m.name }}" class="dir-avatar">
     {% else %}
       <div class="dir-avatar-placeholder">🎵</div>
     {% endif %}

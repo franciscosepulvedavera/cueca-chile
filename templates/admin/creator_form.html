@@ -117,7 +117,7 @@
           </label>
           {% if creator and creator.image_path %}
           <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem">
-            <img src="{{ url_for('static', filename=creator.image_path) }}"
+            <img src="{{ img_url(creator.image_path) }}"
                  style="height:64px;width:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gray-200)">
             <span class="field-hint">Sube una nueva imagen para reemplazarla.</span>
           </div>

@@ -31,7 +31,7 @@
           <td>
             <div style="display:flex;align-items:center;gap:.65rem">
               {% if s.image_path %}
-                <img src="{{ url_for('static', filename=s.image_path) }}"
+                <img src="{{ img_url(s.image_path) }}"
                      style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">
               {% else %}
                 <div style="width:36px;height:36px;border-radius:50%;background:var(--red-light);

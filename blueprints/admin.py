@@ -48,13 +48,37 @@ def _require_admin():
         abort(403)
 
 
-def _save_image_simple(file_storage) -> str | None:
+def _save_image(file_storage) -> str | None:
     """
-    Guarda una imagen sin redimensionar. Retorna la ruta relativa o None.
-    Genera nombre único con timestamp para evitar colisiones de archivos.
+    Guarda una imagen y retorna su URL/ruta.
+
+    Si CLOUDINARY_URL está configurado: sube a Cloudinary y retorna la URL HTTPS.
+    Si no: guarda localmente en static/uploads/ y retorna la ruta relativa.
+
+    En ambos casos el valor se guarda en el campo image_path del modelo.
+    El helper img_url() en app.py convierte este valor a la URL correcta en los templates.
     """
     if not file_storage or file_storage.filename == "":
         return None
+
+    import os as _os
+    cloudinary_url = _os.getenv("CLOUDINARY_URL", "")
+
+    if cloudinary_url:
+        # ── Cloudinary: almacenamiento externo persistente ──
+        try:
+            import cloudinary.uploader
+            result = cloudinary.uploader.upload(
+                file_storage,
+                folder="cueca_chile",
+                transformation=[{"width": 1200, "crop": "limit", "quality": "auto"}],
+            )
+            return result["secure_url"]
+        except Exception as e:
+            current_app.logger.error(f"Cloudinary upload error: {e}")
+            # Fallback a local si Cloudinary falla
+
+    # ── Local: almacenamiento en static/uploads/ ──
     from werkzeug.utils import secure_filename
     from datetime import datetime
     filename  = secure_filename(file_storage.filename)
@@ -64,6 +88,10 @@ def _save_image_simple(file_storage) -> str | None:
     os.makedirs(upload_dir, exist_ok=True)
     file_storage.save(os.path.join(upload_dir, filename))
     return f"uploads/{filename}"
+
+
+# Alias para compatibilidad con código existente
+_save_image_simple = _save_image
 
 
 # ─────────────────────────────────────────────────────────────────────────────

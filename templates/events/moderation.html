@@ -118,7 +118,7 @@
 <div class="mod-grid">
   {% for e in events %}
   <div class="mod-card">
-    <img src="{{ url_for('static', filename=e.image_path) }}" alt="{{ e.title }}" class="mod-card-img" loading="lazy">
+    <img src="{{ img_url(e.image_path) }}" alt="{{ e.title }}" class="mod-card-img" loading="lazy">
     <div class="mod-card-body">
       <div class="mod-card-meta">
         <span class="badge badge-default">{{ e.kind }}</span>
