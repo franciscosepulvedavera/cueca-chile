@@ -52,7 +52,20 @@ def create_app():
     cloudinary_url = os.getenv("CLOUDINARY_URL", "")
     if cloudinary_url:
         import cloudinary
-        cloudinary.config(cloudinary_url=cloudinary_url)
+        # Parsear manualmente la URL: cloudinary://api_key:api_secret@cloud_name
+        try:
+            rest = cloudinary_url.replace("cloudinary://", "")
+            credentials, cloud_name = rest.rsplit("@", 1)
+            api_key, api_secret = credentials.split(":", 1)
+            cloudinary.config(
+                cloud_name=cloud_name,
+                api_key=api_key,
+                api_secret=api_secret,
+                secure=True,
+            )
+        except Exception:
+            # Fallback: dejar que cloudinary lea la variable de entorno directamente
+            cloudinary.config(cloudinary_url=cloudinary_url)
 
     # ── Helper global de imágenes: resuelve URLs locales y de Cloudinary ──────
     @app.template_global()
