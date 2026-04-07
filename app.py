@@ -12,7 +12,7 @@
 
 import os
 from datetime import date
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, Response
 from config import Config
 from extensions import db, login_manager, migrate, scheduler
 from models import Event, User
@@ -158,6 +158,52 @@ def create_app():
             kinds=kinds,
             active_kind=kind,
         )
+
+    # ── SEO: sitemap.xml dinámico ─────────────────────────────────────────
+    @app.route("/sitemap.xml")
+    def sitemap():
+        from models import Championship
+        base = request.url_root.rstrip("/")
+        urls = [
+            {"loc": base + "/",                  "changefreq": "daily",   "priority": "1.0"},
+            {"loc": base + "/campeonatos/",       "changefreq": "weekly",  "priority": "0.9"},
+            {"loc": base + "/resultados/",        "changefreq": "weekly",  "priority": "0.8"},
+            {"loc": base + "/musicos/",           "changefreq": "weekly",  "priority": "0.8"},
+            {"loc": base + "/creadores/",         "changefreq": "weekly",  "priority": "0.7"},
+            {"loc": base + "/tiendas/",           "changefreq": "monthly", "priority": "0.7"},
+        ]
+        # Agregar URL de cada campeonato individual
+        with app.app_context():
+            for c in Championship.query.filter_by(active=True).all():
+                urls.append({
+                    "loc": base + f"/campeonatos/{c.id}",
+                    "changefreq": "monthly",
+                    "priority": "0.6",
+                })
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        for u in urls:
+            xml.append(
+                f'  <url><loc>{u["loc"]}</loc>'
+                f'<changefreq>{u["changefreq"]}</changefreq>'
+                f'<priority>{u["priority"]}</priority></url>'
+            )
+        xml.append("</urlset>")
+        return Response("\n".join(xml), mimetype="application/xml")
+
+    # ── SEO: robots.txt ───────────────────────────────────────────────────
+    @app.route("/robots.txt")
+    def robots():
+        base = request.url_root.rstrip("/")
+        content = (
+            "User-agent: *\n"
+            "Allow: /\n"
+            "Disallow: /admin/\n"
+            "Disallow: /auth/\n"
+            "Disallow: /notifications/\n"
+            f"Sitemap: {base}/sitemap.xml\n"
+        )
+        return Response(content, mimetype="text/plain")
 
     return app
 

@@ -3,7 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Cueca Chile{% endblock %}</title>
+
+  {# ── SEO: título, descripción, canonical ─────────────────────────────── #}
+  <title>{% block title %}Cueca Chile — Eventos, Campeonatos y Directorio de Cueca Chilena{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Cueca Chile: el directorio completo de eventos de cueca chilena, campeonatos nacionales, músicos, tiendas y creadores de contenido. Encuentra todo sobre el baile nacional de Chile.{% endblock %}">
+  <meta name="keywords" content="{% block meta_keywords %}cueca, cueca chilena, baile nacional Chile, campeonatos cueca, eventos cueca, músicos cueca, tiendas cueca{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
+
+  {# ── Open Graph (redes sociales) ─────────────────────────────────────── #}
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="Cueca Chile">
+  <meta property="og:title"       content="{% block og_title %}Cueca Chile — Eventos, Campeonatos y Directorio de Cueca Chilena{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}El directorio completo de eventos, campeonatos, músicos, tiendas y creadores de la cueca chilena.{% endblock %}">
+  <meta property="og:url"         content="{{ request.url }}">
+  <meta property="og:image"       content="{% block og_image %}{{ request.url_root }}static/img/background.png{% endblock %}">
+  <meta property="og:locale"      content="es_CL">
+
+  {# ── Twitter Card ────────────────────────────────────────────────────── #}
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="{% block tw_title %}Cueca Chile{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}El directorio completo de la cueca chilena: eventos, campeonatos, músicos y más.{% endblock %}">
+  <meta name="twitter:image"       content="{% block tw_image %}{{ request.url_root }}static/img/background.png{% endblock %}">
+
+  {# ── JSON-LD: Organización ───────────────────────────────────────────── #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Cueca Chile",
+    "url": "{{ request.url_root }}",
+    "description": "Directorio de eventos, campeonatos nacionales, músicos, tiendas y creadores de contenido de la cueca chilena.",
+    "inLanguage": "es-CL"
+  }
+  </script>
+  {% block json_ld %}{% endblock %}
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
